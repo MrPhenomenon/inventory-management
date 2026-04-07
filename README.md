@@ -1,1 +1,1 @@
-EIN Applications
+Inventory Management System
