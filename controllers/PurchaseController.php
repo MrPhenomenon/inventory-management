@@ -8,6 +8,7 @@ use app\models\InventoryTransactions;
 use app\models\Products;
 use app\models\ProductUnits;
 use app\models\Parties;
+use app\models\Payments;
 use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
@@ -31,10 +32,6 @@ class PurchaseController extends Controller
         ];
     }
 
-    /**
-     * Lists all Purchases.
-     * @return mixed
-     */
     public function actionIndex()
     {
         $dataProvider = new ActiveDataProvider([
@@ -52,24 +49,25 @@ class PurchaseController extends Controller
         ]);
     }
 
-    /**
-     * Displays a single Purchase model.
-     * @param integer $id
-     * @return mixed
-     */
     public function actionView($id)
     {
         $model = $this->findModel($id);
+        $payments = Payments::find()->where(['reference_type' => 'purchase', 'reference_id' => $id])->all();
+        $remainingBalance = (float)$model->total_amount - (float)$model->paid_amount;
         
         return $this->render('view', [
             'model' => $model,
+            'payments' => $payments,
+            'remainingBalance' => $remainingBalance,
         ]);
     }
 
-    /**
-     * Creates a new Purchases model with items and inventory transactions.
-     * @return mixed
-     */
+    public function actionAddPayment($id)
+    {
+        $model = $this->findModel($id);
+        return $this->redirect(['payment/create', 'purchase_id' => $id]);
+    }
+
     public function actionCreate()
     {
         $model = new Purchases();
@@ -167,6 +165,26 @@ class PurchaseController extends Controller
 
                 // Update status based on payment
                 $paid_amount = (float) ($model->paid_amount ?? 0);
+                
+                // Check if payment should be recorded
+                $paymentMethod = $post['payment_method'] ?? '';
+                
+                if ($paid_amount > 0 && !empty($paymentMethod)) {
+                    // Create payment record
+                    $payment = new Payments();
+                    $payment->party_id = $model->supplier_id;
+                    $payment->type = Payments::TYPE_OUTGOING;
+                    $payment->amount = $paid_amount;
+                    $payment->method = $paymentMethod;
+                    $payment->reference_type = 'purchase';
+                    $payment->reference_id = $purchase_id;
+                    $payment->created_at = date('Y-m-d H:i:s');
+                    
+                    if (!$payment->save()) {
+                        throw new \Exception('Failed to save payment: ' . json_encode($payment->errors));
+                    }
+                }
+                
                 if ($paid_amount >= $total_amount) {
                     $model->status = Purchases::STATUS_PAID;
                 } elseif ($paid_amount > 0) {
@@ -174,6 +192,8 @@ class PurchaseController extends Controller
                 } else {
                     $model->status = Purchases::STATUS_PENDING;
                 }
+                
+                $model->paid_amount = $paid_amount;
 
                 if (!$model->save()) {
                     throw new \Exception('Failed to update purchase with total: ' . json_encode($model->errors));
@@ -201,12 +221,6 @@ class PurchaseController extends Controller
         ]);
     }
 
-    /**
-     * Finds the Purchases model based on its primary key value.
-     * @param integer $id
-     * @return Purchases the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
     protected function findModel($id)
     {
         if (($model = Purchases::findOne($id)) !== null) {

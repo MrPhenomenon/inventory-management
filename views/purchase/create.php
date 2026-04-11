@@ -33,13 +33,25 @@ $productList = array_combine(
                 <?= $form->field($model, 'supplier_id')->dropDownList($supplierList, ['prompt' => 'Select a supplier']) ?>
             </div>
             <div class="col-md-6">
-                <?= $form->field($model, 'purchase_date')->textInput(['type' => 'datetime-local']) ?>
+                <?= $form->field($model, 'purchase_date')->textInput(['type' => 'datetime-local', 'value' => date('Y-m-d\TH:i', strtotime($model->purchase_date ?: 'now'))]) ?>
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-6">
-                <?= $form->field($model, 'paid_amount')->textInput(['type' => 'number', 'step' => '0.01', 'min' => 0]) ?>
+                <?= $form->field($model, 'paid_amount')->textInput(['type' => 'number', 'step' => '0.01', 'min' => 0, 'id' => 'paid-amount']) ?>
+                <small class="form-text text-muted">If filled, a payment record will be created</small>
+            </div>
+            <div class="col-md-6" id="paymentMethodField" style="display: none;">
+                <div class="form-group">
+                    <label for="paymentMethod">Payment Method <span style="color: red;">*</span></label>
+                    <select id="paymentMethod" class="form-control" name="payment_method">
+                        <option value="">Select method</option>
+                        <option value="cash">Cash</option>
+                        <option value="bank">Bank</option>
+                    </select>
+                    <small class="form-text text-muted">Required when amount is entered</small>
+                </div>
             </div>
         </div>
 
@@ -72,7 +84,7 @@ $productList = array_combine(
                 style="font-weight: bold; font-size: 1.1em;">
         </div>
 
-        <div class="form-group">
+        <div class="form-group mt-3">
             <?= Html::submitButton('Create Purchase', ['class' => 'btn btn-success']) ?>
             <?= Html::a('Cancel', ['index'], ['class' => 'btn btn-secondary']) ?>
         </div>
@@ -205,6 +217,40 @@ document.getElementById('items-container').addEventListener('click', function(e)
     if (e.target.closest('.btn-danger')) {
         removeItem(e.target);
     }
+});
+
+// Show payment method field when paid_amount has a value
+const paidAmountField = document.getElementById('paid-amount');
+const paymentMethodField = document.getElementById('paymentMethodField');
+const paymentMethodSelect = document.getElementById('paymentMethod');
+
+function togglePaymentMethod() {
+    const paidAmount = parseFloat(paidAmountField.value) || 0;
+    if (paidAmount > 0) {
+        paymentMethodField.style.display = 'block';
+        paymentMethodSelect.required = true;
+    } else {
+        paymentMethodField.style.display = 'none';
+        paymentMethodSelect.required = false;
+        paymentMethodSelect.value = '';
+    }
+}
+
+paidAmountField.addEventListener('change', togglePaymentMethod);
+paidAmountField.addEventListener('input', togglePaymentMethod);
+
+// Validate form submission
+document.getElementById('purchase-form').addEventListener('submit', function(e) {
+    const paidAmount = parseFloat(paidAmountField.value) || 0;
+    if (paidAmount > 0 && !paymentMethodSelect.value) {
+        e.preventDefault();
+        alert('Payment method is required when payment amount is entered.');
+        return false;
+    }
+});
+
+window.addEventListener('load', function() {
+    addItem();
 });
 JS;
 

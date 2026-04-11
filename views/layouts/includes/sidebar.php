@@ -7,7 +7,6 @@
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
-                <!-- Dashboard -->
                 <li class="nav-item">
                     <a href="/" class="nav-link">
                         <i class="nav-icon fas fa-home"></i>
@@ -15,7 +14,6 @@
                     </a>
                 </li>
 
-                <!-- Products -->
                 <li class="nav-item has-treeview">
                     <a href="#" class="nav-link">
                         <i class="nav-icon fas fa-cubes"></i>
@@ -37,7 +35,6 @@
                     </ul>
                 </li>
 
-                <!-- Purchases -->
                 <li class="nav-item has-treeview">
                     <a href="#" class="nav-link">
                         <i class="nav-icon fas fa-shopping-cart"></i>
@@ -59,31 +56,6 @@
                     </ul>
                 </li>
 
-                <li class="nav-divider"></li>
-
-                <!-- Inventory (placeholder for future) -->
-                <li class="nav-item has-treeview">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-warehouse"></i>
-                        <p>Inventory <i class="right fas fa-angle-left"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="fas fa-chart-line nav-icon"></i>
-                                <p>Stock Levels</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="fas fa-exchange-alt nav-icon"></i>
-                                <p>Transactions</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-
-                <!-- Sales -->
                 <li class="nav-item has-treeview">
                     <a href="#" class="nav-link">
                         <i class="nav-icon fas fa-money-bill-wave"></i>
@@ -104,8 +76,43 @@
                         </li>
                     </ul>
                 </li>
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-money-bill-wave"></i>
+                        <p>Sales <i class="right fas fa-angle-left"></i></p>
+                    </a>
+                   
+                </li>
 
-                <!-- Parties (Suppliers & Customers) -->
+                <li class="nav-divider"></li>
+
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-warehouse"></i>
+                        <p>Inventory <i class="right fas fa-angle-left"></i></p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['inventory/index']) ?>" class="nav-link">
+                                <i class="fas fa-chart-line nav-icon"></i>
+                                <p>Stock Levels</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['inventory/transactions']) ?>" class="nav-link">
+                                <i class="fas fa-exchange-alt nav-icon"></i>
+                                <p>Transactions</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['inventory/adjust']) ?>" class="nav-link">
+                                <i class="fas fa-tools nav-icon"></i>
+                                <p>Adjust Stock</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <li class="nav-item has-treeview">
                     <a href="#" class="nav-link">
                         <i class="nav-icon fas fa-handshake"></i>
@@ -113,13 +120,13 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="/party" class="nav-link">
                                 <i class="fas fa-users nav-icon"></i>
                                 <p>All Parties</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="/party/create" class="nav-link">
                                 <i class="fas fa-user-plus nav-icon"></i>
                                 <p>Add Party</p>
                             </a>
@@ -127,7 +134,6 @@
                     </ul>
                 </li>
 
-                <!-- Units (Master Data) -->
                 <li class="nav-item has-treeview">
                     <a href="#" class="nav-link">
                         <i class="nav-icon fas fa-ruler-horizontal"></i>
@@ -135,13 +141,13 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="<?= yii\helpers\Url::to(['unit/index']) ?>" class="nav-link">
                                 <i class="fas fa-list nav-icon"></i>
                                 <p>All Units</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="<?= yii\helpers\Url::to(['unit/create']) ?>" class="nav-link">
                                 <i class="fas fa-plus nav-icon"></i>
                                 <p>Create Unit</p>
                             </a>
@@ -151,20 +157,37 @@
 
                 <li class="nav-divider"></li>
 
-                <!-- Reports (placeholder for future) -->
-                <li class="nav-item">
+                <li class="nav-item has-treeview">
                     <a href="#" class="nav-link">
                         <i class="nav-icon fas fa-chart-bar"></i>
-                        <p>Reports</p>
+                        <p>Reports <i class="right fas fa-angle-left"></i></p>
                     </a>
-                </li>
-
-                <!-- Settings (placeholder for future) -->
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-cog"></i>
-                        <p>Settings</p>
-                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['report/stock']) ?>" class="nav-link">
+                                <i class="fas fa-warehouse nav-icon"></i>
+                                <p>Stock Report</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['report/receivables']) ?>" class="nav-link">
+                                <i class="fas fa-money-check nav-icon"></i>
+                                <p>Receivables</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['report/payables']) ?>" class="nav-link">
+                                <i class="fas fa-money-check-alt nav-icon"></i>
+                                <p>Payables</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['report/profit-loss']) ?>" class="nav-link">
+                                <i class="fas fa-chart-line nav-icon"></i>
+                                <p>Profit & Loss</p>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
             </ul>

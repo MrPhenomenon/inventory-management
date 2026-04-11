@@ -2,17 +2,16 @@
 
 namespace app\controllers;
 
-use app\services\DashboardService;
-use app\models\Blocks;
-use app\models\Floors;
 use Yii;
-use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\Response;
-use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
-use app\models\Users;
+use app\models\Sales;
+use app\models\Purchases;
+use app\models\Payments;
+use app\models\Products;
+use app\models\InventoryTransactions;
 
 class SiteController extends Controller
 {
@@ -58,13 +57,63 @@ class SiteController extends Controller
     }
 
     /**
-     * Displays homepage.
+     * Displays dashboard with key summaries.
      *
      * @return string
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $totalSales = Sales::find()->sum('total_amount') ?? 0;
+        $totalSalesPaid = Sales::find()->sum('paid_amount') ?? 0;
+        $totalSalesOutstanding = ($totalSales - $totalSalesPaid);
+        $salesCount = Sales::find()->count();
+        $paidSalesCount = Sales::find()->where(['status' => Sales::STATUS_PAID])->count();
+        $pendingSalesCount = Sales::find()->where(['status' => Sales::STATUS_PENDING])->count();
+
+        $totalPurchases = Purchases::find()->sum('total_amount') ?? 0;
+        $totalPurchasesPaid = Purchases::find()->sum('paid_amount') ?? 0;
+        $totalPurchasesOutstanding = ($totalPurchases - $totalPurchasesPaid);
+        $purchasesCount = Purchases::find()->count();
+        $paidPurchasesCount = Purchases::find()->where(['status' => Purchases::STATUS_PAID])->count();
+        $pendingPurchasesCount = Purchases::find()->where(['status' => Purchases::STATUS_PENDING])->count();
+
+        $totalIncomingPayments = Payments::find()->where(['type' => Payments::TYPE_INCOMING])->sum('amount') ?? 0;
+        $totalOutgoingPayments = Payments::find()->where(['type' => Payments::TYPE_OUTGOING])->sum('amount') ?? 0;
+        $totalPayments = $totalIncomingPayments + $totalOutgoingPayments;
+        $paymentsCount = Payments::find()->count();
+
+        $productsCount = Products::find()->count();
+        
+        $recentPayments = Payments::find()->orderBy(['id' => SORT_DESC])->limit(5)->all();
+        $recentSales = Sales::find()->orderBy(['id' => SORT_DESC])->limit(5)->all();
+        $recentPurchases = Purchases::find()->orderBy(['id' => SORT_DESC])->limit(5)->all();
+
+        return $this->render('dashboard', [
+            'totalSales' => $totalSales,
+            'totalSalesPaid' => $totalSalesPaid,
+            'totalSalesOutstanding' => $totalSalesOutstanding,
+            'salesCount' => $salesCount,
+            'paidSalesCount' => $paidSalesCount,
+            'pendingSalesCount' => $pendingSalesCount,
+            
+            'totalPurchases' => $totalPurchases,
+            'totalPurchasesPaid' => $totalPurchasesPaid,
+            'totalPurchasesOutstanding' => $totalPurchasesOutstanding,
+            'purchasesCount' => $purchasesCount,
+            'paidPurchasesCount' => $paidPurchasesCount,
+            'pendingPurchasesCount' => $pendingPurchasesCount,
+            
+            'totalIncomingPayments' => $totalIncomingPayments,
+            'totalOutgoingPayments' => $totalOutgoingPayments,
+            'totalPayments' => $totalPayments,
+            'paymentsCount' => $paymentsCount,
+            
+            'productsCount' => $productsCount,
+            
+            'recentPayments' => $recentPayments,
+            'recentSales' => $recentSales,
+            'recentPurchases' => $recentPurchases,
+        ]);
     }
 
     /**

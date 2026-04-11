@@ -4,6 +4,7 @@ namespace app\controllers;
 
 use app\components\SalesService;
 use app\models\Parties;
+use app\models\Payments;
 use app\models\ProductUnits;
 use app\models\Products;
 use app\models\SaleItems;
@@ -30,10 +31,6 @@ class SalesController extends Controller
         ];
     }
 
-    /**
-     * Lists all Sales.
-     * @return mixed
-     */
     public function actionIndex()
     {
         $dataProvider = new ActiveDataProvider([
@@ -47,25 +44,26 @@ class SalesController extends Controller
         ]);
     }
 
-    /**
-     * Displays a single Sales model.
-     * @param integer $id
-     * @return mixed
-     * @throws NotFoundHttpException
-     */
+
     public function actionView($id)
     {
         $model = $this->findModel($id);
+        $payments = Payments::find()->where(['reference_type' => 'sale', 'reference_id' => $id])->all();
+        $remainingBalance = (float)$model->total_amount - (float)$model->paid_amount;
 
         return $this->render('view', [
             'model' => $model,
+            'payments' => $payments,
+            'remainingBalance' => $remainingBalance,
         ]);
     }
 
-    /**
-     * Creates a new Sales model with items and inventory deductions.
-     * @return mixed
-     */
+    public function actionAddPayment($id)
+    {
+        $model = $this->findModel($id);
+        return $this->redirect(['payment/create', 'sale_id' => $id]);
+    }
+
     public function actionCreate()
     {
         $model = new Sales();
@@ -173,6 +171,26 @@ class SalesController extends Controller
 
                 $model->total_amount = $totalAmount;
                 $paidAmount = (float) ($model->paid_amount ?? 0);
+                
+                // Check if payment should be recorded
+                $paymentMethod = $post['payment_method'] ?? '';
+                
+                if ($paidAmount > 0 && !empty($paymentMethod)) {
+                    // Create payment record
+                    $payment = new Payments();
+                    $payment->party_id = $model->customer_id;
+                    $payment->type = Payments::TYPE_INCOMING;
+                    $payment->amount = $paidAmount;
+                    $payment->method = $paymentMethod;
+                    $payment->reference_type = 'sale';
+                    $payment->reference_id = $saleId;
+                    $payment->created_at = date('Y-m-d H:i:s');
+                    
+                    if (!$payment->save()) {
+                        throw new \Exception('Failed to save payment: ' . json_encode($payment->errors));
+                    }
+                }
+                
                 if ($paidAmount >= $totalAmount) {
                     $model->status = Sales::STATUS_PAID;
                 } elseif ($paidAmount > 0) {
@@ -199,12 +217,7 @@ class SalesController extends Controller
         return $this->render('create', ['model' => $model, 'items' => $items]);
     }
 
-    /**
-     * Finds the Sales model based on its primary key value.
-     * @param integer $id
-     * @return Sales
-     * @throws NotFoundHttpException
-     */
+
     protected function findModel($id)
     {
         if (($model = Sales::findOne($id)) !== null) {
