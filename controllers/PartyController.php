@@ -63,14 +63,121 @@ class PartyController extends Controller
     {
         $model = $this->findModel($id);
 
-        // Calculate ledger
         $totalSales = Sales::find()->where(['customer_id' => $id])->sum('total_amount') ?? 0;
         $totalPurchases = Purchases::find()->where(['supplier_id' => $id])->sum('total_amount') ?? 0;
         $totalIncomingPayments = Payments::find()->where(['party_id' => $id, 'type' => Payments::TYPE_INCOMING])->sum('amount') ?? 0;
         $totalOutgoingPayments = Payments::find()->where(['party_id' => $id, 'type' => Payments::TYPE_OUTGOING])->sum('amount') ?? 0;
 
-        $customerBalance = $totalSales - $totalIncomingPayments; // They owe you
-        $supplierBalance = $totalPurchases - $totalOutgoingPayments; // You owe them
+        $customerBalance = $totalSales - $totalIncomingPayments;
+        $supplierBalance = $totalPurchases - $totalOutgoingPayments;
+
+        $transactions = [];
+
+        $sales = Sales::find()->where(['customer_id' => $id])->orderBy(['sale_date' => SORT_ASC])->all();
+        foreach ($sales as $sale) {
+            $transactions[] = [
+                'date' => $sale->created_at,
+                'type' => 'Sale',
+                'description' => 'Sale #' . $sale->id,
+                'debit' => $sale->total_amount,
+                'credit' => 0,
+                'status' => $sale->status,
+                'sort_order' => 0,
+            ];
+
+            $salePayments = Payments::find()
+                ->where(['party_id' => $id, 'reference_type' => 'sale', 'reference_id' => $sale->id])
+                ->orderBy(['created_at' => SORT_ASC])
+                ->all();
+            
+            foreach ($salePayments as $payment) {
+                $transactions[] = [
+                    'date' => $payment->created_at,
+                    'type' => 'Payment (Incoming)',
+                    'description' => '  ↳ Payment #' . $payment->id . ' - ' . ucfirst($payment->method),
+                    'debit' => 0,
+                    'credit' => $payment->amount,
+                    'status' => 'paid',
+                    'sort_order' => 1,
+                ];
+            }
+        }
+
+        $purchases = Purchases::find()->where(['supplier_id' => $id])->orderBy(['purchase_date' => SORT_ASC])->all();
+        foreach ($purchases as $purchase) {
+            $transactions[] = [
+                'date' => $purchase->created_at,
+                'type' => 'Purchase',
+                'description' => 'Purchase #' . $purchase->id,
+                'debit' => 0,
+                'credit' => $purchase->total_amount,
+                'status' => $purchase->status,
+                'sort_order' => 0,
+            ];
+
+            $purchasePayments = Payments::find()
+                ->where(['party_id' => $id, 'reference_type' => 'purchase', 'reference_id' => $purchase->id])
+                ->orderBy(['created_at' => SORT_ASC])
+                ->all();
+            
+            foreach ($purchasePayments as $payment) {
+                $transactions[] = [
+                    'date' => $payment->created_at,
+                    'type' => 'Payment (Outgoing)',
+                    'description' => '  ↳ Payment #' . $payment->id . ' - ' . ucfirst($payment->method),
+                    'debit' => $payment->amount,
+                    'credit' => 0,
+                    'status' => 'paid',
+                    'sort_order' => 1,
+                ];
+            }
+        }
+
+        $linkedPaymentIds = [];
+        $linkedPayments = Payments::find()
+            ->where(['party_id' => $id])
+            ->andWhere(['not', ['reference_id' => null]])
+            ->select('id')
+            ->column();
+        $linkedPaymentIds = $linkedPayments;
+
+        $orphanedPayments = Payments::find()
+            ->where(['party_id' => $id])
+            ->andWhere(['or', ['reference_id' => null], ['not in', 'id', $linkedPaymentIds]])
+            ->orderBy(['created_at' => SORT_ASC])
+            ->all();
+
+        foreach ($orphanedPayments as $payment) {
+            if ($payment->type === Payments::TYPE_INCOMING) {
+                $transactions[] = [
+                    'date' => $payment->created_at,
+                    'type' => 'Payment (Incoming)',
+                    'description' => 'Payment #' . $payment->id . ' - ' . ucfirst($payment->method),
+                    'debit' => 0,
+                    'credit' => $payment->amount,
+                    'status' => 'paid',
+                    'sort_order' => 0,
+                ];
+            } else {
+                $transactions[] = [
+                    'date' => $payment->created_at,
+                    'type' => 'Payment (Outgoing)',
+                    'description' => 'Payment #' . $payment->id . ' - ' . ucfirst($payment->method),
+                    'debit' => $payment->amount,
+                    'credit' => 0,
+                    'status' => 'paid',
+                    'sort_order' => 0,
+                ];
+            }
+        }
+
+        usort($transactions, function ($a, $b) {
+            $dateDiff = strtotime($a['date']) - strtotime($b['date']);
+            if ($dateDiff === 0) {
+                return $a['sort_order'] - $b['sort_order'];
+            }
+            return $dateDiff;
+        });
 
         return $this->render('view', [
             'model' => $model,
@@ -80,13 +187,10 @@ class PartyController extends Controller
             'totalOutgoingPayments' => $totalOutgoingPayments,
             'customerBalance' => $customerBalance,
             'supplierBalance' => $supplierBalance,
+            'transactions' => $transactions,
         ]);
     }
 
-    /**
-     * Creates a new Parties model.
-     * @return mixed
-     */
     public function actionCreate()
     {
         $model = new Parties();
@@ -101,12 +205,6 @@ class PartyController extends Controller
         ]);
     }
 
-    /**
-     * Updates an existing Parties model.
-     * @param integer $id
-     * @return mixed
-     * @throws NotFoundHttpException
-     */
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
@@ -121,12 +219,6 @@ class PartyController extends Controller
         ]);
     }
 
-    /**
-     * Deletes an existing Parties model.
-     * @param integer $id
-     * @return mixed
-     * @throws NotFoundHttpException
-     */
     public function actionDelete($id)
     {
         $this->findModel($id)->delete();
@@ -134,12 +226,7 @@ class PartyController extends Controller
         return $this->redirect(['index']);
     }
 
-    /**
-     * Finds the Parties model based on its primary key value.
-     * @param integer $id
-     * @return Parties
-     * @throws NotFoundHttpException
-     */
+ 
     protected function findModel($id)
     {
         if (($model = Parties::findOne($id)) !== null) {
