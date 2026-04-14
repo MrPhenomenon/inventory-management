@@ -62,24 +62,16 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'class' => 'yii\grid\ActionColumn',
-                'template' => '{view} {delete}',
+                'template' => '{view}',
                 'buttons' => [
                     'view' => function($url, $model) {
                         return Html::a('View', $url, ['class' => 'btn btn-info btn-sm']);
                     },
-                    'delete' => function($url, $model) {
-                        return Html::a('Delete', $url, [
-                            'class' => 'btn btn-danger btn-sm',
-                            'data' => ['confirm' => 'Are you sure?', 'method' => 'post']
-                        ]);
-                    },
+                    
                 ],
                 'urlCreator' => function($action, $model, $key, $index) {
                     if ($action === 'view') {
                         return ['purchase/view', 'id' => $model->id];
-                    }
-                    if ($action === 'delete') {
-                        return ['purchase/delete', 'id' => $model->id];
                     }
                     return '#';
                 }

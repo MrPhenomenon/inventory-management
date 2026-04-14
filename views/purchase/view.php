@@ -152,10 +152,6 @@ $this->params['breadcrumbs'][] = $this->title;
             <?= Html::button('Record Payment', ['class' => 'btn btn-success', 'data-toggle' => 'modal', 'data-target' => '#paymentModal']) ?>
         <?php endif; ?>
         <?= Html::a('Back to Purchases', ['index'], ['class' => 'btn btn-secondary']) ?>
-        <?= Html::a('Delete', ['delete', 'id' => $model->id], [
-            'class' => 'btn btn-danger',
-            'data' => ['confirm' => 'Are you sure?', 'method' => 'post']
-        ]) ?>
     </div>
 
 </div>

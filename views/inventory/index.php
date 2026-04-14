@@ -27,7 +27,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'name',
                 'label' => 'Product Name',
                 'value' => function ($data) {
-                    return Html::a($data['name'], ['product/view', 'id' => $data['id']], ['target' => '_blank']);
+                    return Html::a($data['name'], ['product/index', 'Products[name]' => $data['name']], ['target' => '_blank']);
                 },
                 'format' => 'html',
             ],
@@ -55,7 +55,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '{view}',
                 'buttons' => [
                     'view' => function ($url, $data) {
-                        return Html::a('View Details', ['product/view', 'id' => $data['id']], ['class' => 'btn btn-info btn-sm']);
+                        return Html::a('View Details', ['product/index', 'Products[name]' => $data['name']], ['class' => 'btn btn-info btn-sm']);
                     },
                 ],
                 'urlCreator' => function ($action, $data, $key, $index) {

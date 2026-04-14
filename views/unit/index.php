@@ -27,7 +27,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'symbol',
             [
                 'class' => 'yii\grid\ActionColumn',
-                'template' => '{view} {update} {delete}',
+                'template' => '{view} {update}',
                 'buttons' => [
                     'view' => function ($url, $model) {
                         return Html::a('View', $url, ['class' => 'btn btn-info btn-sm']);
@@ -35,12 +35,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     'update' => function ($url, $model) {
                         return Html::a('Update', $url, ['class' => 'btn btn-warning btn-sm']);
                     },
-                    'delete' => function ($url, $model) {
-                        return Html::a('Delete', $url, [
-                            'class' => 'btn btn-danger btn-sm',
-                            'data' => ['confirm' => 'Are you sure?', 'method' => 'post']
-                        ]);
-                    },
+                    
                 ],
                 'urlCreator' => function ($action, $model, $key, $index) {
                     if ($action === 'view') {
@@ -48,9 +43,6 @@ $this->params['breadcrumbs'][] = $this->title;
                     }
                     if ($action === 'update') {
                         return ['unit/update', 'id' => $model->id];
-                    }
-                    if ($action === 'delete') {
-                        return ['unit/delete', 'id' => $model->id];
                     }
                     return '#';
                 }
