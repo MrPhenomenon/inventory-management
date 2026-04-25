@@ -55,7 +55,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '{view}',
                 'buttons' => [
                     'view' => function ($url, $data) {
-                        return Html::a('View Details', ['product/index', 'Products[name]' => $data['name']], ['class' => 'btn btn-info btn-sm']);
+                        return Html::a('View Details', ['product/index', 'Products[name]' => $data['name']], ['class' => 'btn btn-info btn-sm', 'data-pjax' => 0]);
                     },
                 ],
                 'urlCreator' => function ($action, $data, $key, $index) {

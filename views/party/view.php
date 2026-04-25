@@ -10,6 +10,8 @@ use yii\helpers\Html;
 /** @var float $totalOutgoingPayments */
 /** @var float $customerBalance */
 /** @var float $supplierBalance */
+/** @var float $openingBalance */
+/** @var string|null $openingBalanceType */
 /** @var array $transactions */
 
 $this->title = $model->name;
@@ -44,6 +46,17 @@ $this->params['breadcrumbs'][] = $this->title;
                             <th>Created At:</th>
                             <td><?= Yii::$app->formatter->asDatetime($model->created_at, 'php:Y-m-d H:i') ?></td>
                         </tr>
+                        <?php if ($model->hasOpeningBalance()): ?>
+                        <tr>
+                            <th>Opening Balance:</th>
+                            <td>
+                                <?= Yii::$app->formatter->asDecimal($model->opening_balance, 2) ?>
+                                <span class="badge <?= $model->opening_balance_type === 'receivable' ? 'badge-warning' : 'badge-info' ?>" style="margin-left:4px;">
+                                    <?= $model->opening_balance_type === 'receivable' ? 'Receivable' : 'Payable' ?>
+                                </span>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
                     </table>
                 </div>
             </div>
@@ -54,6 +67,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="card-header"><h5 class="mb-0">Ledger Summary</h5></div>
                 <div class="card-body">
                     <table class="table table-sm">
+                        <?php if ($model->hasOpeningBalance()): ?>
+                        <tr>
+                            <th>Opening Balance <span style="font-weight:normal;font-size:0.85em;">(<?= $model->opening_balance_type === 'receivable' ? 'Receivable' : 'Payable' ?>)</span>:</th>
+                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($model->opening_balance, 2) ?></td>
+                        </tr>
+                        <?php endif; ?>
                         <tr>
                             <th>Total Sales:</th>
                             <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalSales, 2) ?></td>
@@ -144,7 +163,9 @@ $this->params['breadcrumbs'][] = $this->title;
                         <td><?= Yii::$app->formatter->asDate($transaction['date'], 'php:Y-m-d') ?></td>
                         <td>
                             <?php
-                            if (str_contains($transaction['type'], 'Payment')) {
+                            if ($transaction['type'] === 'Opening Balance') {
+                                $badgeClass = 'badge-dark';
+                            } elseif (str_contains($transaction['type'], 'Payment')) {
                                 $badgeClass = 'badge-secondary';
                             } elseif ($transaction['type'] === 'Sale') {
                                 $badgeClass = 'badge-success';
@@ -170,6 +191,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                 'paid' => 'badge-success',
                                 'partial' => 'badge-warning',
                                 'pending' => 'badge-info',
+                                'opening' => 'badge-dark',
                                 default => 'badge-secondary',
                             };
                             ?>
@@ -179,16 +201,23 @@ $this->params['breadcrumbs'][] = $this->title;
                     <?php endforeach; ?>
                 </tbody>
                 <tfoot class="table-light">
+                    <?php
+                        $footerDebit  = $totalSales + $totalOutgoingPayments
+                            + ($openingBalanceType === 'receivable' ? $openingBalance : 0);
+                        $footerCredit = $totalPurchases + $totalIncomingPayments
+                            + ($openingBalanceType === 'payable' ? $openingBalance : 0);
+                        $footerNet    = $footerDebit - $footerCredit;
+                    ?>
                     <tr>
                         <td colspan="3" style="font-weight: bold;">Final Balance</td>
                         <td style="text-align: right; font-weight: bold;">
-                            <?= Yii::$app->formatter->asDecimal($totalSales + $totalOutgoingPayments, 2) ?>
+                            <?= Yii::$app->formatter->asDecimal($footerDebit, 2) ?>
                         </td>
                         <td style="text-align: right; font-weight: bold;">
-                            <?= Yii::$app->formatter->asDecimal($totalPurchases + $totalIncomingPayments, 2) ?>
+                            <?= Yii::$app->formatter->asDecimal($footerCredit, 2) ?>
                         </td>
-                        <td style="text-align: right; font-weight: bold; color: <?= ($totalSales + $totalOutgoingPayments - $totalPurchases - $totalIncomingPayments) > 0 ? 'red' : 'green' ?>;">
-                            <?= Yii::$app->formatter->asDecimal($totalSales + $totalOutgoingPayments - $totalPurchases - $totalIncomingPayments, 2) ?>
+                        <td style="text-align: right; font-weight: bold; color: <?= $footerNet > 0 ? 'red' : 'green' ?>;">
+                            <?= Yii::$app->formatter->asDecimal($footerNet, 2) ?>
                         </td>
                         <td></td>
                     </tr>

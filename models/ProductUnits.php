@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use app\components\AppModel;
 use Yii;
 
 /**
@@ -17,7 +18,7 @@ use Yii;
  * @property PurchaseItems[] $purchaseItems
  * @property SaleItems[] $saleItems
  */
-class ProductUnits extends \yii\db\ActiveRecord
+class ProductUnits extends AppModel
 {
 
 

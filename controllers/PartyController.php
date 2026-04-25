@@ -68,8 +68,13 @@ class PartyController extends Controller
         $totalIncomingPayments = Payments::find()->where(['party_id' => $id, 'type' => Payments::TYPE_INCOMING])->sum('amount') ?? 0;
         $totalOutgoingPayments = Payments::find()->where(['party_id' => $id, 'type' => Payments::TYPE_OUTGOING])->sum('amount') ?? 0;
 
-        $customerBalance = $totalSales - $totalIncomingPayments;
-        $supplierBalance = $totalPurchases - $totalOutgoingPayments;
+        $openingBalance = (float)$model->opening_balance;
+        $openingBalanceType = $model->opening_balance_type;
+
+        $customerBalance = $totalSales - $totalIncomingPayments
+            + ($openingBalanceType === Parties::OPENING_BALANCE_TYPE_RECEIVABLE ? $openingBalance : 0);
+        $supplierBalance = $totalPurchases - $totalOutgoingPayments
+            + ($openingBalanceType === Parties::OPENING_BALANCE_TYPE_PAYABLE ? $openingBalance : 0);
 
         $transactions = [];
 
@@ -179,6 +184,18 @@ class PartyController extends Controller
             return $dateDiff;
         });
 
+        if ($model->hasOpeningBalance()) {
+            array_unshift($transactions, [
+                'date' => $model->created_at,
+                'type' => 'Opening Balance',
+                'description' => 'Opening Balance — ' . ($openingBalanceType === Parties::OPENING_BALANCE_TYPE_RECEIVABLE ? 'They owe us' : 'We owe them'),
+                'debit' => $openingBalanceType === Parties::OPENING_BALANCE_TYPE_RECEIVABLE ? $openingBalance : 0,
+                'credit' => $openingBalanceType === Parties::OPENING_BALANCE_TYPE_PAYABLE ? $openingBalance : 0,
+                'status' => 'opening',
+                'sort_order' => -1,
+            ]);
+        }
+
         return $this->render('view', [
             'model' => $model,
             'totalSales' => $totalSales,
@@ -187,6 +204,8 @@ class PartyController extends Controller
             'totalOutgoingPayments' => $totalOutgoingPayments,
             'customerBalance' => $customerBalance,
             'supplierBalance' => $supplierBalance,
+            'openingBalance' => $openingBalance,
+            'openingBalanceType' => $openingBalanceType,
             'transactions' => $transactions,
         ]);
     }

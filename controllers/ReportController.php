@@ -9,10 +9,10 @@ use app\models\Products;
 use app\models\Purchases;
 use app\models\Sales;
 use Yii;
+use app\components\AppController;
 use yii\data\ArrayDataProvider;
-use yii\web\Controller;
 
-class ReportController extends Controller
+class ReportController extends AppController
 {
  
     public function actionStock()
@@ -59,7 +59,8 @@ class ReportController extends Controller
                 ->where(['party_id' => $customer->id, 'type' => Payments::TYPE_INCOMING])
                 ->sum('amount') ?? 0;
 
-            $balance = (float)$totalSales - (float)$totalPayments;
+            $openingReceivable = $customer->opening_balance_type === 'receivable' ? (float)$customer->opening_balance : 0;
+            $balance = (float)$totalSales - (float)$totalPayments + $openingReceivable;
 
             $receivablesData[] = [
                 'id' => $customer->id,
@@ -107,7 +108,8 @@ class ReportController extends Controller
                 ->where(['party_id' => $supplier->id, 'type' => Payments::TYPE_OUTGOING])
                 ->sum('amount') ?? 0;
 
-            $balance = (float)$totalPurchases - (float)$totalPayments;
+            $openingPayable = $supplier->opening_balance_type === 'payable' ? (float)$supplier->opening_balance : 0;
+            $balance = (float)$totalPurchases - (float)$totalPayments + $openingPayable;
 
             $payablesData[] = [
                 'id' => $supplier->id,
@@ -159,18 +161,23 @@ class ReportController extends Controller
 
     protected function calculateBaseStock($productId)
     {
-        $sql = "SELECT COALESCE(SUM(CASE 
+        $tenantId = Yii::$app->user->identity->tenant_id;
+
+        $sql = "SELECT COALESCE(SUM(CASE
                     WHEN type = :typeIn THEN base_quantity
                     WHEN type = :typeOut THEN -base_quantity
                     WHEN type = :typeAdjustment THEN base_quantity
                     ELSE 0
-                END), 0) AS stock FROM inventory_transactions WHERE product_id = :product_id";
+                END), 0) AS stock FROM inventory_transactions
+                WHERE product_id = :product_id
+                AND (:tenantId IS NULL OR tenant_id = :tenantId)";
 
         $stock = Yii::$app->db->createCommand($sql, [
             ':typeIn' => InventoryTransactions::TYPE_IN,
             ':typeOut' => InventoryTransactions::TYPE_OUT,
             ':typeAdjustment' => InventoryTransactions::TYPE_ADJUSTMENT,
             ':product_id' => $productId,
+            ':tenantId' => $tenantId,
         ])->queryScalar();
 
         return (float)$stock;

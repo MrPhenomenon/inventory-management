@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use app\components\AppModel;
 use Yii;
 
 /**
@@ -12,13 +13,15 @@ use Yii;
  * @property string $type
  * @property string|null $phone
  * @property string|null $address
+ * @property float $opening_balance
+ * @property string|null $opening_balance_type
  * @property string|null $created_at
  *
  * @property Payments[] $payments
  * @property Purchases[] $purchases
  * @property Sales[] $sales
  */
-class Parties extends \yii\db\ActiveRecord
+class Parties extends AppModel
 {
 
     /**
@@ -27,6 +30,9 @@ class Parties extends \yii\db\ActiveRecord
     const TYPE_CUSTOMER = 'customer';
     const TYPE_SUPPLIER = 'supplier';
     const TYPE_BOTH = 'both';
+
+    const OPENING_BALANCE_TYPE_RECEIVABLE = 'receivable';
+    const OPENING_BALANCE_TYPE_PAYABLE = 'payable';
 
     /**
      * {@inheritdoc}
@@ -42,13 +48,20 @@ class Parties extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['phone', 'address'], 'default', 'value' => null],
+            [['phone', 'address', 'opening_balance_type'], 'default', 'value' => null],
             [['name', 'type'], 'required'],
             [['type', 'address'], 'string'],
             [['created_at'], 'safe'],
             [['name'], 'string', 'max' => 150],
             [['phone'], 'string', 'max' => 20],
             ['type', 'in', 'range' => array_keys(self::optsType())],
+            [['opening_balance'], 'number', 'min' => 0],
+            [['opening_balance'], 'default', 'value' => 0],
+            ['opening_balance_type', 'in', 'range' => array_keys(self::optsOpeningBalanceType()), 'skipOnEmpty' => true],
+            ['opening_balance_type', 'required', 'when' => function ($model) {
+                return (float)$model->opening_balance > 0;
+            }, 'whenClient' => "function(attribute, value) { return parseFloat($('#parties-opening_balance').val()) > 0; }",
+            'message' => 'Balance type is required when opening balance is set.'],
         ];
     }
 
@@ -63,6 +76,8 @@ class Parties extends \yii\db\ActiveRecord
             'type' => 'Type',
             'phone' => 'Phone',
             'address' => 'Address',
+            'opening_balance' => 'Opening Balance',
+            'opening_balance_type' => 'Balance Type',
             'created_at' => 'Created At',
         ];
     }
@@ -109,6 +124,19 @@ class Parties extends \yii\db\ActiveRecord
             self::TYPE_SUPPLIER => 'supplier',
             self::TYPE_BOTH => 'both',
         ];
+    }
+
+    public static function optsOpeningBalanceType()
+    {
+        return [
+            self::OPENING_BALANCE_TYPE_RECEIVABLE => 'They owe us (Receivable)',
+            self::OPENING_BALANCE_TYPE_PAYABLE => 'We owe them (Payable)',
+        ];
+    }
+
+    public function hasOpeningBalance()
+    {
+        return (float)$this->opening_balance > 0 && $this->opening_balance_type !== null;
     }
 
     /**

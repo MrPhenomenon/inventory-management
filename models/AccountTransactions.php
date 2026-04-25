@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use app\components\AppModel;
 use Yii;
 
 /**
@@ -17,7 +18,7 @@ use Yii;
  *
  * @property Accounts $account
  */
-class AccountTransactions extends \yii\db\ActiveRecord
+class AccountTransactions extends AppModel
 {
 
     /**

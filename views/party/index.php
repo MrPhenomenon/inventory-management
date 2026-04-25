@@ -40,6 +40,17 @@ $this->params['breadcrumbs'][] = $this->title;
             'phone',
             'address:ntext',
             [
+                'attribute' => 'opening_balance',
+                'label' => 'Opening Balance',
+                'contentOptions' => ['style' => 'text-align:right;'],
+                'headerOptions' => ['style' => 'text-align:right;'],
+                'value' => function ($model) {
+                    if (!$model->hasOpeningBalance()) return '-';
+                    $label = $model->opening_balance_type === 'receivable' ? 'Receivable' : 'Payable';
+                    return Yii::$app->formatter->asDecimal($model->opening_balance, 2) . ' (' . $label . ')';
+                },
+            ],
+            [
                 'attribute' => 'created_at',
                 'format' => ['date', 'php:Y-m-d H:i'],
             ],

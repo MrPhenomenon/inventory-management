@@ -2,43 +2,26 @@
 
 namespace app\controllers;
 
+use app\components\AppController;
+use app\models\Users;
 use Yii;
-use yii\web\Controller;
 use yii\web\Response;
 use app\models\LoginForm;
-use app\models\ContactForm;
 use app\models\Sales;
 use app\models\Purchases;
 use app\models\Payments;
 use app\models\Products;
 use app\models\InventoryTransactions;
 
-class SiteController extends Controller
+class SiteController extends AppController
 {
-    /**
-     * {@inheritdoc}
-     */
-    // public function behaviors()
-    // {
-    //     return [
-    //         'access' => [
-    //             'class' => AccessControl::class,
-    //             'except' => ['login', 'error', 'captcha'],
-    //             'rules' => [
-    //                 [
-    //                     'allow' => true,
-    //                     'roles' => ['@'],
-    //                 ],
-    //             ],
-    //         ],
-    //         'verbs' => [
-    //             'class' => VerbFilter::class,
-    //             'actions' => [
-    //                 'logout' => ['post'],
-    //             ],
-    //         ],
-    //     ];
-    // }
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        // Allow guests on login, logout, error, and the one-time setup page
+        $behaviors['access']['except'] = ['login', 'logout', 'error', 'setup'];
+        return $behaviors;
+    }
 
     /**
      * {@inheritdoc}
@@ -130,6 +113,9 @@ class SiteController extends Controller
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            if (Yii::$app->user->identity->role === Users::ROLE_ADMIN) {
+                return $this->redirect(['admin/index']);
+            }
             return $this->goBack();
         }
 
@@ -147,35 +133,6 @@ class SiteController extends Controller
     public function actionLogout()
     {
         Yii::$app->user->logout();
-
-        return $this->goHome();
-    }
-
-    /**
-     * Displays contact page.
-     *
-     * @return Response|string
-     */
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
-
-            return $this->refresh();
-        }
-        return $this->render('contact', [
-            'model' => $model,
-        ]);
-    }
-
-    /**
-     * Displays about page.
-     *
-     * @return string
-     */
-    public function actionAbout()
-    {
-        return $this->render('about');
+        return $this->redirect(['site/login']);
     }
 }

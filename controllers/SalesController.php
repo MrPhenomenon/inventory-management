@@ -11,13 +11,13 @@ use app\models\SaleItems;
 use app\models\Sales;
 use app\models\InventoryTransactions;
 use Yii;
+use app\components\AppController;
 use yii\data\ActiveDataProvider;
 use yii\db\Transaction;
 use yii\filters\VerbFilter;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
-class SalesController extends Controller
+class SalesController extends AppController
 {
     public function behaviors()
     {

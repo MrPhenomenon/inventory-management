@@ -4,12 +4,12 @@ namespace app\controllers;
 
 use app\models\Products;
 use app\models\Units;
-use yii\web\Controller;
+use app\components\AppController;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\data\ActiveDataProvider;
 
-class ProductController extends Controller
+class ProductController extends AppController
 {
     /**
      * {@inheritdoc}

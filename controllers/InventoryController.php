@@ -6,12 +6,12 @@ use app\models\InventoryTransactions;
 use app\models\Products;
 use app\models\ProductUnits;
 use Yii;
+use app\components\AppController;
 use yii\data\ArrayDataProvider;
 use yii\filters\VerbFilter;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
-class InventoryController extends Controller
+class InventoryController extends AppController
 {
     public function behaviors()
     {

@@ -4,12 +4,12 @@ namespace app\controllers;
 
 use app\models\Units;
 use Yii;
+use app\components\AppController;
 use yii\data\ActiveDataProvider;
 use yii\filters\VerbFilter;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
-class UnitController extends Controller
+class UnitController extends AppController
 {
     public function behaviors()
     {

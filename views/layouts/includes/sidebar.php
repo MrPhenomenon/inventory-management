@@ -190,6 +190,31 @@
                     </ul>
                 </li>
 
+                <?php if (!Yii::$app->user->isGuest && Yii::$app->user->identity->role === 'admin'): ?>
+                <li class="nav-divider"></li>
+
+                <li class="nav-item has-treeview">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-cog"></i>
+                        <p>Admin <i class="right fas fa-angle-left"></i></p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['admin/index']) ?>" class="nav-link">
+                                <i class="fas fa-building nav-icon"></i>
+                                <p>Tenants</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['admin/create-user']) ?>" class="nav-link">
+                                <i class="fas fa-user-plus nav-icon"></i>
+                                <p>Add User</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
             </ul>
         </nav>
     </div>

@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use app\components\AppModel;
 use Yii;
 
 /**
@@ -18,7 +19,7 @@ use Yii;
  *
  * @property Parties $party
  */
-class Payments extends \yii\db\ActiveRecord
+class Payments extends AppModel
 {
 
     /**

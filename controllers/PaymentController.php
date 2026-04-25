@@ -7,13 +7,13 @@ use app\models\Parties;
 use app\models\Sales;
 use app\models\Purchases;
 use Yii;
+use app\components\AppController;
 use yii\data\ActiveDataProvider;
 use yii\db\Transaction;
 use yii\filters\VerbFilter;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
-class PaymentController extends Controller
+class PaymentController extends AppController
 {
     public function behaviors()
     {

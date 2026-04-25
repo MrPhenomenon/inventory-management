@@ -18,7 +18,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?php Pjax::begin(); ?>
 
-    <div class="product-search" style="margin-bottom: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 4px;">
+    <div class="product-search"
+        style="margin-bottom: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 4px;">
         <h4>Search / Filter</h4>
         <?php $form = \yii\widgets\ActiveForm::begin([
             'method' => 'get',
@@ -54,9 +55,9 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'base_unit_id',
                 'label' => 'Base Unit',
-                'value' => function($model) {
-                    return $model->baseUnit ? $model->baseUnit->name : 'N/A';
-                }
+                'value' => function ($model) {
+                return $model->baseUnit ? $model->baseUnit->name : 'N/A';
+            }
             ],
             'created_at',
 
@@ -64,22 +65,29 @@ $this->params['breadcrumbs'][] = $this->title;
                 'class' => 'yii\grid\ActionColumn',
                 'template' => '{view} {update} {units}',
                 'buttons' => [
-                    'view' => function($url, $model) {
-                        return Html::a('View', $url, ['class' => 'btn btn-info btn-sm']);
-                    },
-                    'update' => function($url, $model) {
-                        return Html::a('Edit', $url, ['class' => 'btn btn-warning btn-sm']);
-                    },
-                    'units' => function($url, $model) {
-                        return Html::a('Units', ['/productunit/index', 'product_id' => $model->id], ['class' => 'btn btn-primary btn-sm']);
-                    },
+                    'view' => function ($url, $model) {
+                    return Html::a('View', $url, ['class' => 'btn btn-info btn-sm']);
+                },
+                    'update' => function ($url, $model) {
+                    return Html::a('Edit', $url, ['class' => 'btn btn-warning btn-sm']);
+                },
+                    'units' => function ($url, $model) {
+                    return Html::a(
+                        'Units',
+                        ['/productunit/index', 'product_id' => $model->id],
+                        [
+                            'class' => 'btn btn-primary btn-sm',
+                            'data-pjax' => 0
+                        ]
+                    );
+                },
                 ],
-                'urlCreator' => function($action, $model, $key, $index) {
-                    if ($action === 'update') {
-                        return ['product/' . $action, 'id' => $model->id];
-                    }
-                    return '#';
+                'urlCreator' => function ($action, $model, $key, $index) {
+                if ($action === 'update') {
+                    return ['product/' . $action, 'id' => $model->id];
                 }
+                return '#';
+            }
             ],
         ],
     ]); ?>

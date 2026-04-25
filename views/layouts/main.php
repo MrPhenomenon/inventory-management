@@ -36,9 +36,23 @@ $session = Yii::$app->session;
   <div class="wrapper">
     <nav class="main-header navbar navbar-expand navbar-white navbar-light">
         <ul class="navbar-nav">
-        <li class="nav-item">
-            <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-        </li>
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            <?php if (!Yii::$app->user->isGuest): ?>
+            <li class="nav-item">
+                <span class="nav-link text-muted">
+                    <i class="fas fa-user-circle"></i>
+                    <?= Html::encode(Yii::$app->user->identity->name) ?>
+                    <span class="badge badge-secondary ml-1"><?= Html::encode(Yii::$app->user->identity->role) ?></span>
+                </span>
+            </li>
+            <li class="nav-item">
+                <?= Html::a('<i class="fas fa-sign-out-alt"></i> Logout', ['site/logout'], ['class' => 'nav-link']) ?>
+            </li>
+            <?php endif; ?>
         </ul>
     </nav>
 

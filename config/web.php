@@ -26,12 +26,12 @@ $config = [
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
-        // 'user' => [
-        //     'identityClass' => 'app\models\Users',
-        //     'enableAutoLogin' => true,
-        //     'identityCookie' => ['name' => '_identity', 'httpOnly' => true],
-        //     'loginUrl' => ['site/login'],
-        // ],
+        'user' => [
+            'identityClass' => 'app\models\Users',
+            'enableAutoLogin' => true,
+            'identityCookie' => ['name' => '_identity', 'httpOnly' => true],
+            'loginUrl' => ['site/login'],
+        ],
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
