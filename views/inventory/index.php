@@ -22,8 +22,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'columns' => [
-            ['class' => 'yii\grid\SerialColumn'],
-            [
+        [
                 'attribute' => 'name',
                 'label' => 'Product Name',
                 'value' => function ($data) {
@@ -34,7 +33,27 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'category',
                 'label' => 'Category',
-            ],
+                ],
+                [
+                    'label' => 'Unit Breakdown',
+                    'format' => 'html',
+                    'value' => function ($data) {
+                        if (empty($data['unit_breakdown'])) {
+                            return '<span class="text-muted" style="font-size:0.8em;">—</span>';
+                        }
+                        $lines = [];
+                        foreach ($data['unit_breakdown'] as $u) {
+                            $qty = $u['qty'];
+                            $formatted = ($qty == floor($qty))
+                                ? number_format($qty, 0)
+                                : number_format($qty, 2);
+                            $color = $qty > 0 ? '#155724' : ($qty < 0 ? '#721c24' : '#6c757d');
+                            $lines[] = '<span style="color:' . $color . '; white-space:nowrap;">'
+                                . htmlspecialchars($u['name']) . ': <strong>' . $formatted . '</strong></span>';
+                        }
+                        return '<div style="font-size:0.8em; line-height:1.7;">' . implode('<br>', $lines) . '</div>';
+                    },
+                ],
             [
                 'attribute' => 'base_stock',
                 'label' => 'Current Stock (Base Unit)',
@@ -55,7 +74,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'template' => '{view}',
                 'buttons' => [
                     'view' => function ($url, $data) {
-                        return Html::a('View Details', ['product/index', 'Products[name]' => $data['name']], ['class' => 'btn btn-info btn-sm', 'data-pjax' => 0]);
+                        return Html::a('View Details', ['inventory/transactions', 'product_id' => $data['id']], ['class' => 'btn btn-info btn-sm', 'data-pjax' => 0]);
                     },
                 ],
                 'urlCreator' => function ($action, $data, $key, $index) {
