@@ -1,49 +1,58 @@
 <?php
 
 use yii\helpers\Html;
-use yii\helpers\Url;
 
-/** @var app\models\Tenants[] $tenants */
+/** @var app\models\Users[] $users */
 
-$this->title = 'Admin Panel — Tenants';
+$this->title = 'User Management';
 $this->params['breadcrumbs'][] = 'Admin';
 ?>
 <div class="admin-index">
 
     <p>
-        <?= Html::a('<i class="fas fa-plus"></i> Add Tenant', ['create-tenant'], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('<i class="fas fa-user-plus"></i> Add User', ['create-user'], ['class' => 'btn btn-success']) ?>
     </p>
 
-    <?php if (empty($tenants)): ?>
-        <div class="alert alert-info">No tenants yet. Add the first one above.</div>
+    <?php if (empty($users)): ?>
+        <div class="alert alert-info">No users yet.</div>
     <?php else: ?>
-    <div class="row">
-        <?php foreach ($tenants as $tenant): ?>
-        <div class="col-md-6 mb-3">
-            <div class="card <?= $tenant->status === 'inactive' ? 'border-secondary' : '' ?>">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <?= Html::encode($tenant->name) ?>
-                        <span class="badge <?= $tenant->status === 'active' ? 'badge-success' : 'badge-secondary' ?> ml-2">
-                            <?= ucfirst($tenant->status) ?>
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($users as $user): ?>
+                <tr>
+                    <td><?= Html::encode($user->name) ?></td>
+                    <td><?= Html::encode($user->email) ?></td>
+                    <td><span class="badge badge-<?= $user->role === 'admin' ? 'danger' : 'secondary' ?>"><?= ucfirst($user->role) ?></span></td>
+                    <td>
+                        <span class="badge badge-<?= $user->status ? 'success' : 'warning' ?>">
+                            <?= $user->status ? 'Active' : 'Inactive' ?>
                         </span>
-                    </h6>
-                    <div>
-                        <?= Html::a('Users (' . count($tenant->users) . ')', ['users', 'tenant_id' => $tenant->id], ['class' => 'btn btn-info btn-sm']) ?>
+                    </td>
+                    <td>
+                        <?php if ($user->id !== Yii::$app->user->id): ?>
                         <?= Html::a(
-                            $tenant->status === 'active' ? 'Deactivate' : 'Activate',
-                            ['toggle-tenant', 'id' => $tenant->id],
-                            ['class' => 'btn btn-sm ' . ($tenant->status === 'active' ? 'btn-warning' : 'btn-success')]
+                            $user->status ? 'Deactivate' : 'Activate',
+                            ['toggle-user', 'id' => $user->id],
+                            ['class' => 'btn btn-xs ' . ($user->status ? 'btn-warning' : 'btn-success')]
                         ) ?>
-                    </div>
-                </div>
-                <div class="card-body py-2">
-                    <small class="text-muted"><?= Html::encode($tenant->email) ?></small><br>
-                    <small class="text-muted">Created: <?= Yii::$app->formatter->asDate($tenant->created_at, 'php:Y-m-d') ?></small>
-                </div>
-            </div>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
-        <?php endforeach; ?>
     </div>
     <?php endif; ?>
 

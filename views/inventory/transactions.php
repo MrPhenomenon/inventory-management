@@ -84,8 +84,19 @@ $this->params['breadcrumbs'][] = $this->title;
                 'contentOptions' => ['style' => 'text-align: right;'],
             ],
             [
-                'attribute' => 'reference_type',
-                'label' => 'Reference',
+                'label' => 'Party',
+                'format' => 'html',
+                'value' => function ($model) {
+                    $party = $model->getPartyInfo();
+                    if ($party['id'] && $party['name']) {
+                        return Html::a(
+                            Html::encode($party['name']),
+                            ['/party/view', 'id' => $party['id']],
+                            ['class' => 'text-primary']
+                        );
+                    }
+                    return '<span class="text-muted">—</span>';
+                },
             ],
             [
                 'attribute' => 'created_at',

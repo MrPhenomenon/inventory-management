@@ -3,6 +3,8 @@
 namespace app\controllers;
 
 use app\components\SalesService;
+use app\models\AccountTransactions;
+use app\models\Accounts;
 use app\models\Parties;
 use app\models\Payments;
 use app\models\ProductUnits;
@@ -170,33 +172,71 @@ class SalesController extends AppController
                 }
 
                 $model->total_amount = $totalAmount;
-                $paidAmount = (float) ($model->paid_amount ?? 0);
-                
-                // Check if payment should be recorded
-                $paymentMethod = $post['payment_method'] ?? '';
-                
-                if ($paidAmount > 0 && !empty($paymentMethod)) {
-                    // Create payment record
+
+                $isCashSale    = (int)$model->customer_id === 31;
+
+                if ($isCashSale) {
+                    $cashAccount = Accounts::find()->where(['name' => 'Cash'])->one()
+                        ?? Accounts::find()->where(['type' => Accounts::TYPE_CASH])->one();
+
                     $payment = new Payments();
-                    $payment->party_id = $model->customer_id;
-                    $payment->type = Payments::TYPE_INCOMING;
-                    $payment->amount = $paidAmount;
-                    $payment->method = $paymentMethod;
+                    $payment->party_id       = $model->customer_id;
+                    $payment->type           = Payments::TYPE_INCOMING;
+                    $payment->amount         = $totalAmount;
+                    $payment->account_id     = $cashAccount ? $cashAccount->id : null;
+                    $payment->notes          = 'Auto: Cash Sale #' . $saleId;
                     $payment->reference_type = 'sale';
-                    $payment->reference_id = $saleId;
-                    $payment->created_at = date('Y-m-d H:i:s');
-                    
+                    $payment->reference_id   = $saleId;
+                    $payment->created_at     = date('Y-m-d H:i:s');
+
                     if (!$payment->save()) {
-                        throw new \Exception('Failed to save payment: ' . json_encode($payment->errors));
+                        throw new \Exception('Failed to save cash payment: ' . json_encode($payment->errors));
                     }
-                }
-                
-                if ($paidAmount >= $totalAmount) {
-                    $model->status = Sales::STATUS_PAID;
-                } elseif ($paidAmount > 0) {
-                    $model->status = Sales::STATUS_PARTIAL;
+
+                    if ($cashAccount) {
+                        $at = new AccountTransactions();
+                        $at->account_id     = $cashAccount->id;
+                        $at->type           = AccountTransactions::TYPE_CREDIT;
+                        $at->amount         = $totalAmount;
+                        $at->reference_type = 'payment';
+                        $at->reference_id   = $payment->id;
+                        $at->description    = 'Cash Sale #' . $saleId;
+                        $at->created_at     = $payment->created_at;
+
+                        if (!$at->save()) {
+                            throw new \Exception('Failed to save account transaction: ' . json_encode($at->errors));
+                        }
+                    }
+
+                    $model->paid_amount = $totalAmount;
+                    $model->status      = Sales::STATUS_PAID;
+
                 } else {
-                    $model->status = Sales::STATUS_PENDING;
+                    $paidAmount    = (float)($model->paid_amount ?? 0);
+                    $paymentMethod = $post['payment_method'] ?? '';
+
+                    if ($paidAmount > 0 && !empty($paymentMethod)) {
+                        $payment = new Payments();
+                        $payment->party_id       = $model->customer_id;
+                        $payment->type           = Payments::TYPE_INCOMING;
+                        $payment->amount         = $paidAmount;
+                        $payment->method         = $paymentMethod;
+                        $payment->reference_type = 'sale';
+                        $payment->reference_id   = $saleId;
+                        $payment->created_at     = date('Y-m-d H:i:s');
+
+                        if (!$payment->save()) {
+                            throw new \Exception('Failed to save payment: ' . json_encode($payment->errors));
+                        }
+                    }
+
+                    if ($paidAmount >= $totalAmount) {
+                        $model->status = Sales::STATUS_PAID;
+                    } elseif ($paidAmount > 0) {
+                        $model->status = Sales::STATUS_PARTIAL;
+                    } else {
+                        $model->status = Sales::STATUS_PENDING;
+                    }
                 }
 
                 if (!$model->save(false)) {
@@ -217,6 +257,57 @@ class SalesController extends AppController
         return $this->render('create', ['model' => $model, 'items' => $items]);
     }
 
+
+    public function actionDelete($id)
+    {
+        $model = $this->findModel($id);
+        $transaction = Yii::$app->db->beginTransaction(Transaction::READ_COMMITTED);
+        $isAjax = Yii::$app->request->isAjax;
+
+        try {
+            // 1. Delete account_transactions linked to any payments for this sale
+            $paymentIds = Payments::find()
+                ->where(['reference_type' => 'sale', 'reference_id' => $id])
+                ->select('id')
+                ->column();
+
+            if (!empty($paymentIds)) {
+                AccountTransactions::deleteAll(['reference_type' => 'payment', 'reference_id' => $paymentIds]);
+            }
+
+            // 2. Delete payments for this sale
+            Payments::deleteAll(['reference_type' => 'sale', 'reference_id' => $id]);
+
+            // 3. Revert inventory (delete OUT transactions)
+            InventoryTransactions::deleteAll(['reference_type' => 'sale', 'reference_id' => $id]);
+
+            // 4. Delete sale items
+            SaleItems::deleteAll(['sale_id' => $id]);
+
+            // 5. Delete the sale itself
+            $model->delete();
+
+            $transaction->commit();
+            $msg = 'Sale #' . $id . ' deleted and inventory reverted.';
+
+            if ($isAjax) {
+                Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return ['success' => true, 'message' => $msg];
+            }
+            Yii::$app->session->setFlash('success', $msg);
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            $msg = 'Failed to delete sale: ' . $e->getMessage();
+
+            if ($isAjax) {
+                Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return ['success' => false, 'message' => $msg];
+            }
+            Yii::$app->session->setFlash('error', $msg);
+        }
+
+        return $this->redirect(['index']);
+    }
 
     protected function findModel($id)
     {

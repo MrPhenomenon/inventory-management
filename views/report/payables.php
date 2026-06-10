@@ -18,7 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="alert alert-warning">
         <strong>Total Outstanding Payables:</strong>
         <span style="font-size: 1.5em; font-weight: bold; color: red;">
-            <?= Yii::$app->formatter->asDecimal($totalPayables, 2) ?>
+            <?= Yii::$app->formatter->asDecimal($totalPayables) ?>
         </span>
     </div>
 
@@ -54,7 +54,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Outstanding Balance',
                 'value' => function ($data) {
                     $balance = $data['balance'];
-                    return "<strong style=\"color: red;\">" . Yii::$app->formatter->asDecimal($balance, 2) . "</strong>";
+                    return "<strong style=\"color: red;\">" . Yii::$app->formatter->asDecimal($balance) . "</strong>";
                 },
                 'format' => 'html',
                 'contentOptions' => ['style' => 'text-align: right;'],

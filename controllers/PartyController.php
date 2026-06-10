@@ -4,7 +4,9 @@ namespace app\controllers;
 
 use app\models\Parties;
 use app\models\Payments;
+use app\models\PurchaseItems;
 use app\models\Purchases;
+use app\models\SaleItems;
 use app\models\Sales;
 use Yii;
 use yii\data\ActiveDataProvider;
@@ -81,9 +83,9 @@ class PartyController extends Controller
         $sales = Sales::find()->where(['customer_id' => $id])->orderBy(['sale_date' => SORT_ASC])->all();
         foreach ($sales as $sale) {
             $transactions[] = [
-                'date' => $sale->created_at,
+                'date' => $sale->sale_date,
                 'type' => 'Sale',
-                'description' => 'Sale #' . $sale->id,
+                'description' => $this->buildItemsDescription('sale', $sale->id),
                 'debit' => $sale->total_amount,
                 'credit' => 0,
                 'status' => $sale->status,
@@ -111,9 +113,9 @@ class PartyController extends Controller
         $purchases = Purchases::find()->where(['supplier_id' => $id])->orderBy(['purchase_date' => SORT_ASC])->all();
         foreach ($purchases as $purchase) {
             $transactions[] = [
-                'date' => $purchase->created_at,
+                'date' => $purchase->purchase_date,
                 'type' => 'Purchase',
-                'description' => 'Purchase #' . $purchase->id,
+                'description' => $this->buildItemsDescription('purchase', $purchase->id),
                 'debit' => 0,
                 'credit' => $purchase->total_amount,
                 'status' => $purchase->status,
@@ -246,6 +248,45 @@ class PartyController extends Controller
     }
 
  
+    /**
+     * Build a human-readable description for a sale or purchase from its items.
+     * Format: "Product - Unit × Qty, Product - Unit × Qty, ..."
+     * Falls back to "Sale #id" / "Purchase #id" if items are missing.
+     */
+    private function buildItemsDescription(string $type, int $refId): string
+    {
+        if ($type === 'sale') {
+            $items = SaleItems::find()
+                ->with(['product', 'productUnit'])
+                ->where(['sale_id' => $refId])
+                ->all();
+            $fallback = 'Sale #' . $refId;
+        } else {
+            $items = PurchaseItems::find()
+                ->with(['product', 'productUnit'])
+                ->where(['purchase_id' => $refId])
+                ->all();
+            $fallback = 'Purchase #' . $refId;
+        }
+
+        if (empty($items)) {
+            return $fallback;
+        }
+
+        $parts = [];
+        foreach ($items as $item) {
+            $productName = $item->product ? $item->product->name : 'Product #' . $item->product_id;
+            $unitName    = $item->productUnit ? $item->productUnit->unit_name : '';
+            $qty         = rtrim(rtrim(number_format((float)$item->quantity, 3, '.', ''), '0'), '.');
+
+            $parts[] = $unitName
+                ? $productName . ' - ' . $unitName . ' × ' . $qty
+                : $productName . ' × ' . $qty;
+        }
+
+        return implode(', ', $parts);
+    }
+
     protected function findModel($id)
     {
         if (($model = Parties::findOne($id)) !== null) {

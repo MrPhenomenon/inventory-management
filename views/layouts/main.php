@@ -97,12 +97,92 @@ $session = Yii::$app->session;
 
   <?php
   if ($session->hasFlash('success')) {
-      $this->registerJs("showMessage('" . $session->getFlash('success') . "', 'success');", \yii\web\View::POS_END);
+      $this->registerJs("showMessage(" . json_encode($session->getFlash('success')) . ", 'success');", \yii\web\View::POS_END);
   } elseif ($session->hasFlash('error')) {
-      $this->registerJs("showMessage('" . $session->getFlash('error') . "', 'error');", \yii\web\View::POS_END);
+      $this->registerJs("showMessage(" . json_encode($session->getFlash('error')) . ", 'error');", \yii\web\View::POS_END);
   }
   ?>
+
+  <!-- Universal Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="deleteModalTitle"><i class="fas fa-exclamation-triangle mr-2"></i>Confirm Delete</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-1">You are about to delete:</p>
+          <p class="font-weight-bold" id="deleteModalLabel" style="word-break:break-word;"></p>
+          <p class="text-muted mb-0" style="font-size:.875em;">This action cannot be undone. All related records will be reverted.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="deleteModalConfirm">
+            <i class="fas fa-trash mr-1"></i>Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <?php $this->endBody() ?>
+
+  <!-- Delete modal JS — placed after endBody() so jQuery is available -->
+  <script>
+  $(function () {
+    var pendingUrl = null;
+    var pendingRow = null;
+    var $modal = $('#deleteModal');
+    var $confirmBtn = $('#deleteModalConfirm');
+
+    // Event delegation: works for static and Pjax-reloaded rows alike
+    $(document).on('click', '[data-delete-url]', function (e) {
+      e.preventDefault();
+      pendingUrl = $(this).data('delete-url');
+      pendingRow = $(this).closest('tr')[0] || null;
+      $('#deleteModalLabel').text($(this).data('delete-label') || 'this item');
+      $modal.modal('show');
+    });
+
+    $confirmBtn.on('click', function () {
+      if (!pendingUrl) return;
+      $confirmBtn.prop('disabled', true)
+                 .html('<i class="fas fa-spinner fa-spin mr-1"></i>Deleting…');
+
+      var csrf = $('meta[name="csrf-token"]').attr('content') || '';
+
+      $.ajax({
+        url:     pendingUrl,
+        method:  'POST',
+        data:    { _csrf: csrf },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json'
+      })
+      .done(function (data) {
+        $modal.modal('hide');
+        $confirmBtn.prop('disabled', false)
+                   .html('<i class="fas fa-trash mr-1"></i>Delete');
+        if (data.success) {
+          showMessage(data.message, 'success');
+          if (pendingRow) $(pendingRow).remove();
+        } else {
+          showMessage(data.message || 'Delete failed.', 'error');
+        }
+        pendingUrl = null;
+        pendingRow = null;
+      })
+      .fail(function (xhr) {
+        $modal.modal('hide');
+        $confirmBtn.prop('disabled', false)
+                   .html('<i class="fas fa-trash mr-1"></i>Delete');
+        showMessage('Request failed (' + xhr.status + ').', 'error');
+      });
+    });
+  });
+  </script>
 </body>
 
 </html>

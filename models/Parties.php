@@ -185,4 +185,42 @@ class Parties extends AppModel
     {
         $this->type = self::TYPE_BOTH;
     }
+
+    public function getCurrentBalance(): float
+    {
+        $totalSales = (float) Sales::find()->where(['customer_id' => $this->id])->sum('total_amount');
+        $totalPurchases = (float) Purchases::find()->where(['supplier_id' => $this->id])->sum('total_amount');
+        $totalIncomingPayments = (float) Payments::find()->where(['party_id' => $this->id, 'type' => Payments::TYPE_INCOMING])->sum('amount');
+        $totalOutgoingPayments = (float) Payments::find()->where(['party_id' => $this->id, 'type' => Payments::TYPE_OUTGOING])->sum('amount');
+
+        $customerBalance = $totalSales - $totalIncomingPayments
+            + ($this->opening_balance_type === self::OPENING_BALANCE_TYPE_RECEIVABLE ? $this->opening_balance : 0);
+
+        $supplierBalance = $totalPurchases - $totalOutgoingPayments
+            + ($this->opening_balance_type === self::OPENING_BALANCE_TYPE_PAYABLE ? $this->opening_balance : 0);
+
+        return $customerBalance - $supplierBalance;
+    }
+
+    public function getBalanceLabel(): string
+    {
+        $balance = $this->getCurrentBalance();
+
+        if ($balance > 0) {
+            return 'Receivable';
+        }
+
+        if ($balance < 0) {
+            return 'Payable';
+        }
+
+        return 'Balanced';
+    }
+
+    public function getBalanceBadge(): string
+    {
+        $balance = $this->getCurrentBalance();
+
+        return $balance > 0 ? 'Receivable' : ($balance < 0 ? 'Payable' : 'Balanced');
+    }
 }

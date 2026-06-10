@@ -46,7 +46,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             $qty = $u['qty'];
                             $formatted = ($qty == floor($qty))
                                 ? number_format($qty, 0)
-                                : number_format($qty, 2);
+                                : number_format($qty);
                             $color = $qty > 0 ? '#155724' : ($qty < 0 ? '#721c24' : '#6c757d');
                             $lines[] = '<span style="color:' . $color . '; white-space:nowrap;">'
                                 . htmlspecialchars($u['name']) . ': <strong>' . $formatted . '</strong></span>';
@@ -60,7 +60,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => function ($data) {
                     $stock = $data['base_stock'];
                     $color = $stock > 0 ? 'green' : ($stock < 0 ? 'red' : 'gray');
-                    return "<span style=\"color: {$color}; font-weight: bold;\">" . number_format($stock, 2) . "</span>";
+                    return "<span style=\"color: {$color}; font-weight: bold;\">" . number_format($stock) . "</span>";
                 },
                 'format' => 'html',
                 'contentOptions' => ['style' => 'text-align: right;'],

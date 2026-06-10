@@ -2,6 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
+use app\models\Accounts;
 use app\models\Parties;
 use app\models\Sales;
 use app\models\Purchases;
@@ -33,23 +34,27 @@ if ($saleId) {
     $model->party_id = $partyId;
 }
 
-$parties = Parties::find()->asArray()->all();
-$partyList = array_combine(
-    array_column($parties, 'id'),
-    array_column($parties, 'name')
-);
+$parties = Parties::find()->orderBy(['name' => SORT_ASC])->all();
+$partyList = [];
+foreach ($parties as $party) {
+    $balance = $party->getCurrentBalance();
+    if ($balance === 0) {
+        $balanceText = 'Balanced';
+    } elseif ($balance > 0) {
+        $balanceText = 'Receivable ' . Yii::$app->formatter->asDecimal(abs($balance));
+    } else {
+        $balanceText = 'Payable ' . Yii::$app->formatter->asDecimal(abs($balance));
+    }
 
-$sales = Sales::find()->where(['!=', 'status', Sales::STATUS_PAID])->asArray()->all();
-$salesList = array_combine(
-    array_column($sales, 'id'),
-    array_map(function ($s) { return 'Sale #' . $s['id'] . ' - ' . Yii::$app->formatter->asDecimal($s['total_amount'] - $s['paid_amount'], 2) . ' remaining'; }, $sales)
-);
+    $partyList[$party->id] = $party->name . ' (' . $balanceText . ')';
+}
 
-$purchases = Purchases::find()->where(['!=', 'status', Purchases::STATUS_PAID])->asArray()->all();
-$purchasesList = array_combine(
-    array_column($purchases, 'id'),
-    array_map(function ($p) { return 'Purchase #' . $p['id'] . ' - ' . Yii::$app->formatter->asDecimal($p['total_amount'] - $p['paid_amount'], 2) . ' remaining'; }, $purchases)
-);
+$accounts = Accounts::find()->orderBy(['name' => SORT_ASC])->all();
+$accountList = [];
+foreach ($accounts as $acc) {
+    $accountList[$acc->id] = $acc->name . ' (' . $acc->displayType() . ')';
+}
+
 ?>
 <div class="payment-create">
 
@@ -70,16 +75,13 @@ $purchasesList = array_combine(
                 <?= $form->field($model, 'amount')->textInput(['type' => 'number', 'step' => '0.01', 'placeholder' => '0.00']) ?>
             </div>
             <div class="col-md-6">
-                <?= $form->field($model, 'method')->dropDownList($model::optsMethod(), ['prompt' => 'Select method']) ?>
+                <?= $form->field($model, 'account_id')->dropDownList($accountList, ['prompt' => '— No specific account —']) ?>
             </div>
         </div>
 
         <div class="row">
-            <div class="col-md-6">
-                <?= $form->field($model, 'reference_type')->dropDownList(['sale' => 'Sale', 'purchase' => 'Purchase', '' => 'None'], ['prompt' => 'Select reference (optional)']) ?>
-            </div>
-            <div class="col-md-6">
-                <?= $form->field($model, 'reference_id')->dropDownList([], ['prompt' => 'Select document', 'id' => 'reference-id-field']) ?>
+            <div class="col-md-12">
+                <?= $form->field($model, 'notes')->textInput(['placeholder' => 'Optional notes']) ?>
             </div>
         </div>
 
@@ -92,42 +94,3 @@ $purchasesList = array_combine(
     </div>
 
 </div>
-
-<?php
-$salesListJson = json_encode($salesList);
-$purchasesListJson = json_encode($purchasesList);
-$js = <<<JS
-const salesList = {$salesListJson};
-const purchasesList = {$purchasesListJson};
-
-function updateReferenceOptions() {
-    const refType = document.querySelector('select[name="Payments[reference_type]"]').value;
-    const refField = document.querySelector('#reference-id-field');
-    
-    let options = '<option value="">Select document</option>';
-    
-    if (refType === 'sale') {
-        Object.entries(salesList).forEach(([id, label]) => {
-            options += `<option value="\${id}">\${label}</option>`;
-        });
-    } else if (refType === 'purchase') {
-        Object.entries(purchasesList).forEach(([id, label]) => {
-            options += `<option value="\${id}">\${label}</option>`;
-        });
-    }
-    
-    refField.innerHTML = options;
-}
-
-document.querySelector('select[name="Payments[reference_type]"]').addEventListener('change', updateReferenceOptions);
-window.addEventListener('load', updateReferenceOptions);
-JS;
-
-$js = str_replace(
-    ['{$salesListJson}', '{$purchasesListJson}'],
-    [$salesListJson, $purchasesListJson],
-    $js
-);
-
-$this->registerJs($js);
-?>

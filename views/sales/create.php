@@ -6,6 +6,10 @@ use yii\widgets\ActiveForm;
 use app\models\Parties;
 use app\models\Products;
 
+// Resolve Cash Sale party ID dynamically
+$cashSaleParty = Parties::find()->where(['name' => 'Cash Sale'])->one();
+$cashSaleId    = $cashSaleParty ? (int)$cashSaleParty->id : 0;
+
 $this->title = 'Create Sale';
 $this->params['breadcrumbs'][] = ['label' => 'Sales', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
@@ -36,24 +40,6 @@ $productList = array_combine(
             </div>
             <div class="col-md-6">
                 <?= $form->field($model, 'sale_date')->textInput(['type' => 'datetime-local', 'value' => date('Y-m-d\TH:i', strtotime($model->sale_date ?: 'now'))]) ?>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <?= $form->field($model, 'paid_amount')->textInput(['type' => 'number', 'step' => '0.01', 'min' => 0, 'id' => 'paid-amount']) ?>
-                <small class="form-text text-muted">If filled, a payment record will be created</small>
-            </div>
-            <div class="col-md-6" id="paymentMethodField" style="display: none;">
-                <div class="form-group">
-                    <label for="paymentMethod">Payment Method <span style="color: red;">*</span></label>
-                    <select id="paymentMethod" class="form-control" name="payment_method">
-                        <option value="">Select method</option>
-                        <option value="cash">Cash</option>
-                        <option value="bank">Bank</option>
-                    </select>
-                    <small class="form-text text-muted">Required when amount is entered</small>
-                </div>
             </div>
         </div>
 
@@ -104,7 +90,7 @@ $js = <<<JS
 let itemCount = 0;
 const productList = $productListJs;
 const ajaxUrlUnits = '$ajaxUrlUnits';
-const existingItems = $itemsData;
+const existingItems = '$itemsData';
 
 function addItem(item = null) {
     itemCount++;
@@ -136,7 +122,7 @@ function addItem(item = null) {
                 <input type="number" name="items[\${itemCount}][price]" class="form-control price" step="0.01" min="0" value="\${price}">
             </td>
             <td>
-                <input type="text" class="form-control row-total" readonly style="font-weight: bold;" value="\${parseFloat(total).toFixed(2)}">
+                <input type="number" name="items[\${itemCount}][total]" class="form-control row-total total" step="0.01" min="0" value="\${parseFloat(total).toFixed(2)}" style="font-weight: bold;">
             </td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm">Remove</button>
@@ -194,12 +180,35 @@ function loadUnits(selectElement, selectedUnitId = '') {
         });
 }
 
-function calculateRowTotal(element) {
+function calculateRowValues(element, source) {
     const row = element.closest('tr');
     const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
-    const price = parseFloat(row.querySelector('.price').value) || 0;
-    const total = quantity * price;
-    row.querySelector('.row-total').value = total.toFixed(2);
+    const priceInput = row.querySelector('.price');
+    const totalInput = row.querySelector('.row-total');
+    let price = parseFloat(priceInput.value) || 0;
+    let total = parseFloat(totalInput.value) || 0;
+    const computedTotal = quantity * price;
+
+    if (source === 'quantity') {
+        if (quantity > 0 && Math.abs(total - computedTotal) > 0.0001 && total > 0) {
+            price = total / quantity;
+            priceInput.value = price.toFixed(2);
+        } else {
+            total = computedTotal;
+            totalInput.value = total.toFixed(2);
+        }
+    } else if (source === 'price') {
+        total = quantity * price;
+        totalInput.value = total.toFixed(2);
+    } else if (source === 'total') {
+        if (quantity > 0) {
+            price = total / quantity;
+        } else {
+            price = 0;
+        }
+        priceInput.value = price.toFixed(2);
+    }
+
     calculateGrandTotal();
 }
 
@@ -226,8 +235,11 @@ document.getElementById('items-container').addEventListener('change', event => {
     if (event.target.classList.contains('product-select')) {
         loadUnits(event.target);
     }
-    if (event.target.classList.contains('quantity') || event.target.classList.contains('price')) {
-        calculateRowTotal(event.target);
+    if (event.target.classList.contains('quantity') || event.target.classList.contains('price') || event.target.classList.contains('total')) {
+        const source = event.target.classList.contains('quantity') ? 'quantity'
+            : event.target.classList.contains('price') ? 'price'
+            : 'total';
+        calculateRowValues(event.target, source);
     }
 });
 

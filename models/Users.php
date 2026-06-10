@@ -24,27 +24,18 @@ class Users extends \yii\db\ActiveRecord implements IdentityInterface
             ['email', 'unique'],
             ['role', 'in', 'range' => [self::ROLE_ADMIN, self::ROLE_USER]],
             ['status', 'default', 'value' => 1],
-            ['tenant_id', 'required', 'when' => function ($model) {
-                return $model->role === self::ROLE_USER;
-            }, 'message' => 'Tenant is required for regular users.'],
         ];
     }
 
     public function attributeLabels()
     {
         return [
-            'id'        => 'ID',
-            'tenant_id' => 'Tenant',
-            'name'      => 'Name',
-            'email'     => 'Email',
-            'role'      => 'Role',
-            'status'    => 'Status',
+            'id'     => 'ID',
+            'name'   => 'Name',
+            'email'  => 'Email',
+            'role'   => 'Role',
+            'status' => 'Status',
         ];
-    }
-
-    public function getTenant()
-    {
-        return $this->hasOne(Tenants::class, ['id' => 'tenant_id']);
     }
 
     public function setPassword($password)

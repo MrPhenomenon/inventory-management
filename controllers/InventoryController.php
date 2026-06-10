@@ -144,23 +144,19 @@ class InventoryController extends AppController
 
     protected function calculateBaseStock($productId)
     {
-        $tenantId = Yii::$app->user->identity->tenant_id;
-
         $sql = "SELECT COALESCE(SUM(CASE
                     WHEN type = :typeIn THEN base_quantity
                     WHEN type = :typeOut THEN -base_quantity
                     WHEN type = :typeAdjustment THEN base_quantity
                     ELSE 0
                 END), 0) AS stock FROM inventory_transactions
-                WHERE product_id = :product_id
-                AND (:tenantId IS NULL OR tenant_id = :tenantId)";
+                WHERE product_id = :product_id";
 
         $stock = Yii::$app->db->createCommand($sql, [
             ':typeIn'         => InventoryTransactions::TYPE_IN,
             ':typeOut'        => InventoryTransactions::TYPE_OUT,
             ':typeAdjustment' => InventoryTransactions::TYPE_ADJUSTMENT,
             ':product_id'     => $productId,
-            ':tenantId'       => $tenantId,
         ])->queryScalar();
 
         return (float)$stock;
@@ -168,8 +164,6 @@ class InventoryController extends AppController
 
     protected function calculateUnitStock($productId, $productUnitId)
     {
-        $tenantId = Yii::$app->user->identity->tenant_id;
-
         $sql = "SELECT COALESCE(SUM(CASE
                     WHEN type = :typeIn THEN quantity
                     WHEN type = :typeOut THEN -quantity
@@ -177,8 +171,7 @@ class InventoryController extends AppController
                     ELSE 0
                 END), 0) AS stock FROM inventory_transactions
                 WHERE product_id = :product_id
-                AND product_unit_id = :product_unit_id
-                AND (:tenantId IS NULL OR tenant_id = :tenantId)";
+                AND product_unit_id = :product_unit_id";
 
         $stock = Yii::$app->db->createCommand($sql, [
             ':typeIn'          => InventoryTransactions::TYPE_IN,
@@ -186,7 +179,6 @@ class InventoryController extends AppController
             ':typeAdjustment'  => InventoryTransactions::TYPE_ADJUSTMENT,
             ':product_id'      => $productId,
             ':product_unit_id' => $productUnitId,
-            ':tenantId'        => $tenantId,
         ])->queryScalar();
 
         return (float)$stock;

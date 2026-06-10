@@ -83,12 +83,19 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => 'html',
             ],
             [
+                'attribute' => 'account_id',
+                'label' => 'Account',
+                'value' => function ($model) {
+                    return $model->account ? Html::a($model->account->name, ['account/view', 'id' => $model->account_id]) : 'N/A';
+                },
+                'format' => 'html',
+            ],
+            [
                 'attribute' => 'amount',
                 'label' => 'Amount',
                 'format' => ['decimal', 2],
                 'contentOptions' => ['style' => 'text-align: right;'],
             ],
-            'method',
             [
                 'attribute' => 'reference_type',
                 'label' => 'Reference',
@@ -108,6 +115,22 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'created_at',
                 'label' => 'Date',
                 'format' => ['date', 'php:Y-m-d H:i'],
+            ],
+            [
+                'label'          => '',
+                'format'         => 'raw',
+                'contentOptions' => ['class' => 'text-right'],
+                'value'          => function ($model) {
+                    $url   = \yii\helpers\Url::to(['payment/delete', 'id' => $model->id]);
+                    $direction = $model->type === 'incoming' ? 'from' : 'to';
+                    $party = $model->party ? $model->party->name : 'Party #' . $model->party_id;
+                    $label = 'Payment #' . $model->id . ' — '
+                        . Yii::$app->formatter->asDecimal($model->amount)
+                        . ' ' . $direction . ' ' . $party;
+                    return '<button type="button" class="btn btn-sm btn-outline-danger"'
+                        . ' data-delete-url="' . $url . '"'
+                        . ' data-delete-label="' . Html::encode($label) . '">Delete</button>';
+                },
             ],
         ],
     ]); ?>

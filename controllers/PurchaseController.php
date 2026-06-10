@@ -2,18 +2,20 @@
 
 namespace app\controllers;
 
-use app\models\Purchases;
-use app\models\PurchaseItems;
+use app\models\AccountTransactions;
 use app\models\InventoryTransactions;
-use app\models\Products;
-use app\models\ProductUnits;
 use app\models\Parties;
 use app\models\Payments;
+use app\models\Products;
+use app\models\ProductUnits;
+use app\models\PurchaseItems;
+use app\models\Purchases;
 use Yii;
 use app\components\AppController;
-use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 use yii\data\ActiveDataProvider;
+use yii\db\Transaction;
+use yii\filters\VerbFilter;
+use yii\web\NotFoundHttpException;
 
 class PurchaseController extends AppController
 {
@@ -219,6 +221,57 @@ class PurchaseController extends AppController
             'model' => $model,
             'items' => $items,
         ]);
+    }
+
+    public function actionDelete($id)
+    {
+        $model = $this->findModel($id);
+        $transaction = Yii::$app->db->beginTransaction(Transaction::READ_COMMITTED);
+        $isAjax = Yii::$app->request->isAjax;
+
+        try {
+            // 1. Delete account_transactions linked to any payments for this purchase
+            $paymentIds = Payments::find()
+                ->where(['reference_type' => 'purchase', 'reference_id' => $id])
+                ->select('id')
+                ->column();
+
+            if (!empty($paymentIds)) {
+                AccountTransactions::deleteAll(['reference_type' => 'payment', 'reference_id' => $paymentIds]);
+            }
+
+            // 2. Delete payments for this purchase
+            Payments::deleteAll(['reference_type' => 'purchase', 'reference_id' => $id]);
+
+            // 3. Revert inventory (delete IN transactions)
+            InventoryTransactions::deleteAll(['reference_type' => 'purchase', 'reference_id' => $id]);
+
+            // 4. Delete purchase items
+            PurchaseItems::deleteAll(['purchase_id' => $id]);
+
+            // 5. Delete the purchase itself
+            $model->delete();
+
+            $transaction->commit();
+            $msg = 'Purchase #' . $id . ' deleted and inventory reverted.';
+
+            if ($isAjax) {
+                Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return ['success' => true, 'message' => $msg];
+            }
+            Yii::$app->session->setFlash('success', $msg);
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            $msg = 'Failed to delete purchase: ' . $e->getMessage();
+
+            if ($isAjax) {
+                Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return ['success' => false, 'message' => $msg];
+            }
+            Yii::$app->session->setFlash('error', $msg);
+        }
+
+        return $this->redirect(['index']);
     }
 
     protected function findModel($id)

@@ -14,25 +14,11 @@
                     </a>
                 </li>
 
-                <li class="nav-item has-treeview">
-                    <a href="#" class="nav-link">
+                <li class="nav-item">
+                    <a href="/product/index" class="nav-link">
                         <i class="nav-icon fas fa-cubes"></i>
-                        <p>Products <i class="right fas fa-angle-left"></i></p>
+                        <p>Products</p>
                     </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="/product/index" class="nav-link">
-                                <i class="fas fa-list nav-icon"></i>
-                                <p>All Products</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/product/create" class="nav-link">
-                                <i class="fas fa-plus nav-icon"></i>
-                                <p>Create Product</p>
-                            </a>
-                        </li>
-                    </ul>
                 </li>
 
                 <li class="nav-item has-treeview">
@@ -42,15 +28,15 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="/purchase/index" class="nav-link">
+                            <a href="<?= yii\helpers\Url::to(['purchase/index']) ?>" class="nav-link">
                                 <i class="fas fa-list nav-icon"></i>
                                 <p>All Purchases</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/purchase/create" class="nav-link">
+                            <a href="<?= yii\helpers\Url::to(['purchase/create']) ?>" class="nav-link">
                                 <i class="fas fa-plus nav-icon"></i>
-                                <p>Create Purchase</p>
+                                <p>New Purchase</p>
                             </a>
                         </li>
                     </ul>
@@ -71,88 +57,50 @@
                         <li class="nav-item">
                             <a href="<?= yii\helpers\Url::to(['sales/create']) ?>" class="nav-link">
                                 <i class="fas fa-plus nav-icon"></i>
-                                <p>Create Sale</p>
+                                <p>New Sale</p>
                             </a>
                         </li>
                     </ul>
                 </li>
                 <li class="nav-item has-treeview">
-                    <a href="/payment" class="nav-link">
+                    <a href="/payment/create" class="nav-link">
                         <i class="nav-icon fas fa-money-bill-wave"></i>
                         <p>Payments</p>
                     </a>
-                   
+
                 </li>
 
                 <li class="nav-divider"></li>
 
-                <li class="nav-item has-treeview">
-                    <a href="#" class="nav-link">
+                <li class="nav-item">
+                    <a href="<?= yii\helpers\Url::to(['inventory/index']) ?>" class="nav-link">
                         <i class="nav-icon fas fa-warehouse"></i>
-                        <p>Inventory <i class="right fas fa-angle-left"></i></p>
+                        <p>Inventory</p>
                     </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['inventory/index']) ?>" class="nav-link">
-                                <i class="fas fa-chart-line nav-icon"></i>
-                                <p>Stock Levels</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['inventory/transactions']) ?>" class="nav-link">
-                                <i class="fas fa-exchange-alt nav-icon"></i>
-                                <p>Transactions</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['inventory/adjust']) ?>" class="nav-link">
-                                <i class="fas fa-tools nav-icon"></i>
-                                <p>Adjust Stock</p>
-                            </a>
-                        </li>
-                    </ul>
+
                 </li>
 
-                <li class="nav-item has-treeview">
-                    <a href="#" class="nav-link">
+                <li class="nav-item">
+                    <a href="/party" class="nav-link">
                         <i class="nav-icon fas fa-handshake"></i>
-                        <p>Parties <i class="right fas fa-angle-left"></i></p>
+                        <p>Parties</p>
                     </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="/party" class="nav-link">
-                                <i class="fas fa-users nav-icon"></i>
-                                <p>All Parties</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/party/create" class="nav-link">
-                                <i class="fas fa-user-plus nav-icon"></i>
-                                <p>Add Party</p>
-                            </a>
-                        </li>
-                    </ul>
                 </li>
 
-                <li class="nav-item has-treeview">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-ruler-horizontal"></i>
-                        <p>Units <i class="right fas fa-angle-left"></i></p>
+                <li class="nav-divider"></li>
+
+                <li class="nav-item">
+                    <a href="<?= yii\helpers\Url::to(['account/index']) ?>" class="nav-link">
+                        <i class="nav-icon fas fa-university"></i>
+                        <p>Accounts</p>
                     </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['unit/index']) ?>" class="nav-link">
-                                <i class="fas fa-list nav-icon"></i>
-                                <p>All Units</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['unit/create']) ?>" class="nav-link">
-                                <i class="fas fa-plus nav-icon"></i>
-                                <p>Create Unit</p>
-                            </a>
-                        </li>
-                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a href="<?= yii\helpers\Url::to(['expense/index']) ?>" class="nav-link">
+                        <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                        <p>Expense Accounts</p>
+                    </a>
                 </li>
 
                 <li class="nav-divider"></li>
@@ -164,11 +112,19 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['report/stock']) ?>" class="nav-link">
-                                <i class="fas fa-warehouse nav-icon"></i>
-                                <p>Stock Report</p>
+                            <a href="<?= yii\helpers\Url::to(['account/chemical-ledger']) ?>" class="nav-link">
+                                <i class="nav-icon fas fa-flask"></i>
+                                <p>Chemical Ledger</p>
                             </a>
                         </li>
+
+                        <li class="nav-item">
+                            <a href="<?= yii\helpers\Url::to(['report/balance-sheet']) ?>" class="nav-link">
+                                <i class="fas fa-balance-scale nav-icon"></i>
+                                <p>Balance Sheet</p>
+                            </a>
+                        </li>
+
                         <li class="nav-item">
                             <a href="<?= yii\helpers\Url::to(['report/receivables']) ?>" class="nav-link">
                                 <i class="fas fa-money-check nav-icon"></i>
@@ -181,40 +137,10 @@
                                 <p>Payables</p>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['report/profit-loss']) ?>" class="nav-link">
-                                <i class="fas fa-chart-line nav-icon"></i>
-                                <p>Profit & Loss</p>
-                            </a>
-                        </li>
+
+                        
                     </ul>
                 </li>
-
-                <?php if (!Yii::$app->user->isGuest && Yii::$app->user->identity->role === 'admin'): ?>
-                <li class="nav-divider"></li>
-
-                <li class="nav-item has-treeview">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-cog"></i>
-                        <p>Admin <i class="right fas fa-angle-left"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['admin/index']) ?>" class="nav-link">
-                                <i class="fas fa-building nav-icon"></i>
-                                <p>Tenants</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="<?= yii\helpers\Url::to(['admin/create-user']) ?>" class="nav-link">
-                                <i class="fas fa-user-plus nav-icon"></i>
-                                <p>Add User</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <?php endif; ?>
-
             </ul>
         </nav>
     </div>

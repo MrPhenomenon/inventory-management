@@ -156,4 +156,33 @@ class InventoryTransactions extends AppModel
     {
         $this->type = self::TYPE_ADJUSTMENT;
     }
+
+    /**
+     * Resolve the party (customer or supplier) linked to this transaction.
+     * Returns ['id' => int|null, 'name' => string|null].
+     */
+    public function getPartyInfo(): array
+    {
+        if ($this->reference_type === 'sale' && $this->reference_id) {
+            $sale = Sales::findOne($this->reference_id);
+            if ($sale) {
+                $customer = $sale->customer;
+                return $customer
+                    ? ['id' => $customer->id, 'name' => $customer->name]
+                    : ['id' => null, 'name' => null];
+            }
+        }
+
+        if ($this->reference_type === 'purchase' && $this->reference_id) {
+            $purchase = Purchases::findOne($this->reference_id);
+            if ($purchase) {
+                $supplier = $purchase->supplier;
+                return $supplier
+                    ? ['id' => $supplier->id, 'name' => $supplier->name]
+                    : ['id' => null, 'name' => null];
+            }
+        }
+
+        return ['id' => null, 'name' => null];
+    }
 }

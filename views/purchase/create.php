@@ -36,26 +36,6 @@ $productList = array_combine(
                 <?= $form->field($model, 'purchase_date')->textInput(['type' => 'datetime-local', 'value' => date('Y-m-d\TH:i', strtotime($model->purchase_date ?: 'now'))]) ?>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <?= $form->field($model, 'paid_amount')->textInput(['type' => 'number', 'step' => '0.01', 'min' => 0, 'id' => 'paid-amount']) ?>
-                <small class="form-text text-muted">If filled, a payment record will be created</small>
-            </div>
-            <div class="col-md-6" id="paymentMethodField" style="display: none;">
-                <div class="form-group">
-                    <label for="paymentMethod">Payment Method <span style="color: red;">*</span></label>
-                    <select id="paymentMethod" class="form-control" name="payment_method">
-                        <option value="">Select method</option>
-                        <option value="cash">Cash</option>
-                        <option value="bank">Bank</option>
-                    </select>
-                    <small class="form-text text-muted">Required when amount is entered</small>
-                </div>
-            </div>
-        </div>
-
-        <hr>
         <h4>Purchase Items</h4>
 
         <div class="table-responsive">
@@ -128,7 +108,7 @@ function addItem() {
                 <input type="number" name="items[\${itemCount}][price]" class="form-control price" step="0.01" min="0" value="0">
             </td>
             <td>
-                <input type="text" class="form-control row-total" readonly style="font-weight: bold;">
+                <input type="number" name="items[\${itemCount}][total]" class="form-control row-total total" step="0.01" min="0" value="0" style="font-weight: bold;">
             </td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm">Remove</button>
@@ -179,13 +159,35 @@ function loadUnits(selectElement) {
         });
 }
 
-function calculateRowTotal(element) {
+function calculateRowValues(element, source) {
     const row = element.closest('tr');
     const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
-    const price = parseFloat(row.querySelector('.price').value) || 0;
-    const total = quantity * price;
-    
-    row.querySelector('.row-total').value = total.toFixed(2);
+    const priceInput = row.querySelector('.price');
+    const totalInput = row.querySelector('.row-total');
+    let price = parseFloat(priceInput.value) || 0;
+    let total = parseFloat(totalInput.value) || 0;
+    const computedTotal = quantity * price;
+
+    if (source === 'quantity') {
+        if (quantity > 0 && Math.abs(total - computedTotal) > 0.0001) {
+            price = total / quantity;
+            priceInput.value = price;
+        } else {
+            total = computedTotal;
+            totalInput.value = total;
+        }
+    } else if (source === 'price') {
+        total = quantity * price;
+        totalInput.value = total;
+    } else if (source === 'total') {
+        if (quantity > 0) {
+            price = total / quantity;
+        } else {
+            price = 0;
+        }
+        priceInput.value = price;
+    }
+
     calculateGrandTotal();
 }
 
@@ -194,22 +196,28 @@ function calculateGrandTotal() {
     document.querySelectorAll('.row-total').forEach(element => {
         grandTotal += parseFloat(element.value) || 0;
     });
-    document.getElementById('grand-total').value = grandTotal.toFixed(2);
+    document.getElementById('grand-total').value = grandTotal;
 }
 
 document.getElementById('add-item-btn').addEventListener('click', function() {
     addItem();
 });
 
-window.addEventListener('load', function() {
-    addItem();
+document.getElementById('items-container').addEventListener('input', function(e) {
+    if (e.target.classList.contains('quantity')) {
+        calculateRowValues(e.target, 'quantity');
+    }
+    if (e.target.classList.contains('price')) {
+        calculateRowValues(e.target, 'price');
+    }
+    if (e.target.classList.contains('row-total')) {
+        calculateRowValues(e.target, 'total');
+    }
 });
+
 document.getElementById('items-container').addEventListener('change', function(e) {
     if (e.target.classList.contains('product-select')) {
         loadUnits(e.target);
-    }
-    if (e.target.classList.contains('quantity') || e.target.classList.contains('price')) {
-        calculateRowTotal(e.target);
     }
 });
 
@@ -219,7 +227,6 @@ document.getElementById('items-container').addEventListener('click', function(e)
     }
 });
 
-// Show payment method field when paid_amount has a value
 const paidAmountField = document.getElementById('paid-amount');
 const paymentMethodField = document.getElementById('paymentMethodField');
 const paymentMethodSelect = document.getElementById('paymentMethod');

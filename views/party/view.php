@@ -50,7 +50,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <tr>
                             <th>Opening Balance:</th>
                             <td>
-                                <?= Yii::$app->formatter->asDecimal($model->opening_balance, 2) ?>
+                                <?= Yii::$app->formatter->asDecimal($model->opening_balance) ?>
                                 <span class="badge <?= $model->opening_balance_type === 'receivable' ? 'badge-warning' : 'badge-info' ?>" style="margin-left:4px;">
                                     <?= $model->opening_balance_type === 'receivable' ? 'Receivable' : 'Payable' ?>
                                 </span>
@@ -70,30 +70,30 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?php if ($model->hasOpeningBalance()): ?>
                         <tr>
                             <th>Opening Balance <span style="font-weight:normal;font-size:0.85em;">(<?= $model->opening_balance_type === 'receivable' ? 'Receivable' : 'Payable' ?>)</span>:</th>
-                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($model->opening_balance, 2) ?></td>
+                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($model->opening_balance) ?></td>
                         </tr>
                         <?php endif; ?>
                         <tr>
                             <th>Total Sales:</th>
-                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalSales, 2) ?></td>
+                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalSales) ?></td>
                         </tr>
                         <tr>
                             <th>Total Purchases:</th>
-                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalPurchases, 2) ?></td>
+                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalPurchases) ?></td>
                         </tr>
                         <tr>
                             <th>Incoming Payments:</th>
-                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalIncomingPayments, 2) ?></td>
+                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalIncomingPayments) ?></td>
                         </tr>
                         <tr>
                             <th>Outgoing Payments:</th>
-                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalOutgoingPayments, 2) ?></td>
+                            <td style="text-align: right;"><?= Yii::$app->formatter->asDecimal($totalOutgoingPayments) ?></td>
                         </tr>
                         <?php if ($model->isTypeCustomer() || $model->isTypeBoth()): ?>
                         <tr>
                             <th>Customer Balance (Owed by them):</th>
                             <td style="text-align: right; font-weight: bold; color: <?= $customerBalance > 0 ? 'red' : 'green' ?>;">
-                                <?= Yii::$app->formatter->asDecimal($customerBalance, 2) ?>
+                                <?= Yii::$app->formatter->asDecimal($customerBalance) ?>
                             </td>
                         </tr>
                         <?php endif; ?>
@@ -101,7 +101,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <tr>
                             <th>Supplier Balance (Owed to them):</th>
                             <td style="text-align: right; font-weight: bold; color: <?= $supplierBalance > 0 ? 'red' : 'green' ?>;">
-                                <?= Yii::$app->formatter->asDecimal($supplierBalance, 2) ?>
+                                <?= Yii::$app->formatter->asDecimal($supplierBalance) ?>
                             </td>
                         </tr>
                         <?php endif; ?>
@@ -109,7 +109,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <tr style="border-top: 2px solid #dee2e6;">
                             <th>Net Balance:</th>
                             <td style="text-align: right; font-weight: bold; color: <?= ($customerBalance - $supplierBalance) > 0 ? 'green' : (($customerBalance - $supplierBalance) < 0 ? 'red' : 'gray') ?>;">
-                                <?= Yii::$app->formatter->asDecimal($customerBalance - $supplierBalance, 2) ?>
+                                <?= Yii::$app->formatter->asDecimal($customerBalance - $supplierBalance) ?>
                                 <span style="font-size: 0.75em; font-weight: normal; color: #666;">
                                     <?php 
                                     $netBalance = $customerBalance - $supplierBalance;
@@ -177,13 +177,13 @@ $this->params['breadcrumbs'][] = $this->title;
                         </td>
                         <td style="<?= $isPaymentRow ? 'padding-left: 2rem;' : '' ?>"><?= Html::encode($transaction['description']) ?></td>
                         <td style="text-align: right;">
-                            <?= $transaction['debit'] > 0 ? Yii::$app->formatter->asDecimal($transaction['debit'], 2) : '-' ?>
+                            <?= $transaction['debit'] > 0 ? Yii::$app->formatter->asDecimal($transaction['debit']) : '-' ?>
                         </td>
                         <td style="text-align: right;">
-                            <?= $transaction['credit'] > 0 ? Yii::$app->formatter->asDecimal($transaction['credit'], 2) : '-' ?>
+                            <?= $transaction['credit'] > 0 ? Yii::$app->formatter->asDecimal($transaction['credit']) : '-' ?>
                         </td>
                         <td style="text-align: right; font-weight: bold;">
-                            <?= Yii::$app->formatter->asDecimal($runningBalance, 2) ?>
+                            <?= Yii::$app->formatter->asDecimal($runningBalance) ?>
                         </td>
                         <td>
                             <?php
@@ -211,13 +211,13 @@ $this->params['breadcrumbs'][] = $this->title;
                     <tr>
                         <td colspan="3" style="font-weight: bold;">Final Balance</td>
                         <td style="text-align: right; font-weight: bold;">
-                            <?= Yii::$app->formatter->asDecimal($footerDebit, 2) ?>
+                            <?= Yii::$app->formatter->asDecimal($footerDebit) ?>
                         </td>
                         <td style="text-align: right; font-weight: bold;">
-                            <?= Yii::$app->formatter->asDecimal($footerCredit, 2) ?>
+                            <?= Yii::$app->formatter->asDecimal($footerCredit) ?>
                         </td>
                         <td style="text-align: right; font-weight: bold; color: <?= $footerNet > 0 ? 'red' : 'green' ?>;">
-                            <?= Yii::$app->formatter->asDecimal($footerNet, 2) ?>
+                            <?= Yii::$app->formatter->asDecimal($footerNet) ?>
                         </td>
                         <td></td>
                     </tr>

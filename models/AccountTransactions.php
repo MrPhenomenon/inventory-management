@@ -35,37 +35,33 @@ class AccountTransactions extends AppModel
         return 'account_transactions';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function rules()
     {
         return [
-            [['reference_type', 'reference_id'], 'default', 'value' => null],
+            [['reference_type', 'reference_id', 'description'], 'default', 'value' => null],
             [['account_id', 'type', 'amount'], 'required'],
             [['account_id', 'reference_id'], 'integer'],
             [['type'], 'string'],
             [['amount'], 'number'],
             [['created_at'], 'safe'],
             [['reference_type'], 'string', 'max' => 50],
+            [['description'], 'string', 'max' => 255],
             ['type', 'in', 'range' => array_keys(self::optsType())],
             [['account_id'], 'exist', 'skipOnError' => true, 'targetClass' => Accounts::class, 'targetAttribute' => ['account_id' => 'id']],
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function attributeLabels()
     {
         return [
-            'id' => 'ID',
-            'account_id' => 'Account ID',
-            'type' => 'Type',
-            'amount' => 'Amount',
+            'id'             => 'ID',
+            'account_id'     => 'Account',
+            'type'           => 'Type',
+            'amount'         => 'Amount',
+            'description'    => 'Description',
             'reference_type' => 'Reference Type',
-            'reference_id' => 'Reference ID',
-            'created_at' => 'Created At',
+            'reference_id'   => 'Reference ID',
+            'created_at'     => 'Date',
         ];
     }
 

@@ -3,15 +3,19 @@
 namespace app\controllers;
 
 use app\components\AppController;
+use app\models\Accounts;
+use app\models\ChemicalAccount;
+use app\models\ExpenseCategories;
+use app\models\Expenses;
+use app\models\Parties;
+use app\models\Payments;
+use app\models\Products;
+use app\models\Purchases;
+use app\models\Sales;
 use app\models\Users;
 use Yii;
 use yii\web\Response;
 use app\models\LoginForm;
-use app\models\Sales;
-use app\models\Purchases;
-use app\models\Payments;
-use app\models\Products;
-use app\models\InventoryTransactions;
 
 class SiteController extends AppController
 {
@@ -46,56 +50,89 @@ class SiteController extends AppController
      */
     public function actionIndex()
     {
-        $totalSales = Sales::find()->sum('total_amount') ?? 0;
-        $totalSalesPaid = Sales::find()->sum('paid_amount') ?? 0;
-        $totalSalesOutstanding = ($totalSales - $totalSalesPaid);
-        $salesCount = Sales::find()->count();
-        $paidSalesCount = Sales::find()->where(['status' => Sales::STATUS_PAID])->count();
-        $pendingSalesCount = Sales::find()->where(['status' => Sales::STATUS_PENDING])->count();
+        // ── Chemical Account ─────────────────────────────────────────────────
+        $chemicalBalance = ChemicalAccount::calculateBalance();
 
-        $totalPurchases = Purchases::find()->sum('total_amount') ?? 0;
-        $totalPurchasesPaid = Purchases::find()->sum('paid_amount') ?? 0;
-        $totalPurchasesOutstanding = ($totalPurchases - $totalPurchasesPaid);
-        $purchasesCount = Purchases::find()->count();
-        $paidPurchasesCount = Purchases::find()->where(['status' => Purchases::STATUS_PAID])->count();
-        $pendingPurchasesCount = Purchases::find()->where(['status' => Purchases::STATUS_PENDING])->count();
+        // ── Sub-accounts ─────────────────────────────────────────────────────
+        $accounts = Accounts::find()->orderBy(['name' => SORT_ASC])->all();
+        $accountRows = [];
+        $totalAccountsBalance = 0;
+        foreach ($accounts as $acc) {
+            $bal = $acc->getBalance();
+            $accountRows[] = ['name' => $acc->name, 'balance' => $bal];
+            $totalAccountsBalance += $bal;
+        }
 
-        $totalIncomingPayments = Payments::find()->where(['type' => Payments::TYPE_INCOMING])->sum('amount') ?? 0;
-        $totalOutgoingPayments = Payments::find()->where(['type' => Payments::TYPE_OUTGOING])->sum('amount') ?? 0;
-        $totalPayments = $totalIncomingPayments + $totalOutgoingPayments;
-        $paymentsCount = Payments::find()->count();
+        // ── Receivables (customers with positive balance) ─────────────────────
+        $totalReceivables = 0;
+        $receivableCount  = 0;
+        $customers = Parties::find()
+            ->where(['in', 'type', [Parties::TYPE_CUSTOMER, Parties::TYPE_BOTH]])
+            ->all();
+        foreach ($customers as $c) {
+            $sales    = (float)(Sales::find()->where(['customer_id' => $c->id])->sum('total_amount') ?? 0);
+            $paid     = (float)(Payments::find()->where(['party_id' => $c->id, 'type' => Payments::TYPE_INCOMING])->sum('amount') ?? 0);
+            $opening  = $c->opening_balance_type === 'receivable' ? (float)$c->opening_balance : 0;
+            $bal      = $sales - $paid + $opening;
+            if ($bal > 0) {
+                $totalReceivables += $bal;
+                $receivableCount++;
+            }
+        }
 
-        $productsCount = Products::find()->count();
-        
-        $recentPayments = Payments::find()->orderBy(['id' => SORT_DESC])->limit(5)->all();
-        $recentSales = Sales::find()->orderBy(['id' => SORT_DESC])->limit(5)->all();
-        $recentPurchases = Purchases::find()->orderBy(['id' => SORT_DESC])->limit(5)->all();
+        // ── Payables (suppliers with positive balance) ────────────────────────
+        $totalPayables = 0;
+        $payableCount  = 0;
+        $suppliers = Parties::find()
+            ->where(['in', 'type', [Parties::TYPE_SUPPLIER, Parties::TYPE_BOTH]])
+            ->all();
+        foreach ($suppliers as $s) {
+            $purchases = (float)(Purchases::find()->where(['supplier_id' => $s->id])->sum('total_amount') ?? 0);
+            $paid      = (float)(Payments::find()->where(['party_id' => $s->id, 'type' => Payments::TYPE_OUTGOING])->sum('amount') ?? 0);
+            $opening   = $s->opening_balance_type === 'payable' ? (float)$s->opening_balance : 0;
+            $bal       = $purchases - $paid + $opening;
+            if ($bal > 0) {
+                $totalPayables += $bal;
+                $payableCount++;
+            }
+        }
+
+        // ── Pending expenses ──────────────────────────────────────────────────
+        $expenseRows = [];
+        $totalPendingExpenses = 0;
+        foreach (ExpenseCategories::find()->orderBy(['name' => SORT_ASC])->all() as $cat) {
+            $pending = Expenses::currentTotal($cat->id);
+            if ($pending > 0) {
+                $expenseRows[] = ['id' => $cat->id, 'name' => $cat->name, 'pending' => $pending];
+                $totalPendingExpenses += $pending;
+            }
+        }
+
+        // ── Recent activity ───────────────────────────────────────────────────
+        $recentSales = Sales::find()
+            ->with(['customer', 'saleItems.product', 'saleItems.productUnit'])
+            ->orderBy(['id' => SORT_DESC])
+            ->limit(6)
+            ->all();
+
+        $recentPurchases = Purchases::find()
+            ->with(['supplier', 'purchaseItems.product', 'purchaseItems.productUnit'])
+            ->orderBy(['id' => SORT_DESC])
+            ->limit(6)
+            ->all();
 
         return $this->render('dashboard', [
-            'totalSales' => $totalSales,
-            'totalSalesPaid' => $totalSalesPaid,
-            'totalSalesOutstanding' => $totalSalesOutstanding,
-            'salesCount' => $salesCount,
-            'paidSalesCount' => $paidSalesCount,
-            'pendingSalesCount' => $pendingSalesCount,
-            
-            'totalPurchases' => $totalPurchases,
-            'totalPurchasesPaid' => $totalPurchasesPaid,
-            'totalPurchasesOutstanding' => $totalPurchasesOutstanding,
-            'purchasesCount' => $purchasesCount,
-            'paidPurchasesCount' => $paidPurchasesCount,
-            'pendingPurchasesCount' => $pendingPurchasesCount,
-            
-            'totalIncomingPayments' => $totalIncomingPayments,
-            'totalOutgoingPayments' => $totalOutgoingPayments,
-            'totalPayments' => $totalPayments,
-            'paymentsCount' => $paymentsCount,
-            
-            'productsCount' => $productsCount,
-            
-            'recentPayments' => $recentPayments,
-            'recentSales' => $recentSales,
-            'recentPurchases' => $recentPurchases,
+            'chemicalBalance'      => $chemicalBalance,
+            'accountRows'          => $accountRows,
+            'totalAccountsBalance' => $totalAccountsBalance,
+            'totalReceivables'     => $totalReceivables,
+            'receivableCount'      => $receivableCount,
+            'totalPayables'        => $totalPayables,
+            'payableCount'         => $payableCount,
+            'expenseRows'          => $expenseRows,
+            'totalPendingExpenses' => $totalPendingExpenses,
+            'recentSales'          => $recentSales,
+            'recentPurchases'      => $recentPurchases,
         ]);
     }
 
@@ -113,12 +150,9 @@ class SiteController extends AppController
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            if (Yii::$app->user->identity->role === Users::ROLE_ADMIN) {
-                return $this->redirect(['admin/index']);
-            }
             return $this->goBack();
         }
-
+ 
         $model->password = '';
         return $this->render('login', [
             'model' => $model,

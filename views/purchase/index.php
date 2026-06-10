@@ -28,9 +28,11 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'supplier_id',
                 'label' => 'Supplier',
-                'value' => function($model) {
-                    return $model->supplier ? $model->supplier->name : 'N/A';
-                }
+                'format' => 'html',
+                'value' => function ($model) {
+                    if (!$model->supplier) return 'N/A';
+                    return Html::a(Html::encode($model->supplier->name), ['/party/view', 'id' => $model->supplier_id]);
+                },
             ],
             [
                 'attribute' => 'purchase_date',

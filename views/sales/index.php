@@ -26,8 +26,10 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'customer_id',
                 'label' => 'Customer',
+                'format' => 'html',
                 'value' => function ($model) {
-                    return $model->customer ? $model->customer->name : 'N/A';
+                    if (!$model->customer) return 'N/A';
+                    return Html::a(Html::encode($model->customer->name), ['/party/view', 'id' => $model->customer_id]);
                 },
             ],
             [

@@ -51,17 +51,17 @@ $this->params['breadcrumbs'][] = $this->title;
                         <tr>
                             <th style="width: 40%;">Total Amount:</th>
                             <td style="font-size: 1.2em; font-weight: bold;">
-                                <?= Yii::$app->formatter->asDecimal($model->total_amount, 2) ?>
+                                <?= Yii::$app->formatter->asDecimal($model->total_amount) ?>
                             </td>
                         </tr>
                         <tr>
                             <th>Paid Amount:</th>
-                            <td><?= Yii::$app->formatter->asDecimal($model->paid_amount, 2) ?></td>
+                            <td><?= Yii::$app->formatter->asDecimal($model->paid_amount) ?></td>
                         </tr>
                         <tr>
                             <th>Outstanding:</th>
                             <td style="font-weight: bold; color: <?= $remainingBalance > 0 ? 'red' : 'green' ?>;">
-                                <?= Yii::$app->formatter->asDecimal($remainingBalance, 2) ?>
+                                <?= Yii::$app->formatter->asDecimal($remainingBalance) ?>
                             </td>
                         </tr>
                         <tr>
@@ -103,8 +103,8 @@ $this->params['breadcrumbs'][] = $this->title;
                                 <td><?= $item->product ? $item->product->name : 'N/A' ?></td>
                                 <td><?= $item->productUnit ? $item->productUnit->unit_name : 'N/A' ?></td>
                                 <td><?= $item->quantity ?></td>
-                                <td><?= Yii::$app->formatter->asDecimal($item->price, 2) ?></td>
-                                <td><?= Yii::$app->formatter->asDecimal($item->total, 2) ?></td>
+                                <td><?= Yii::$app->formatter->asDecimal($item->price) ?></td>
+                                <td><?= Yii::$app->formatter->asDecimal($item->total) ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -135,9 +135,9 @@ $this->params['breadcrumbs'][] = $this->title;
                         ?>
                             <tr>
                                 <td><?= Yii::$app->formatter->asDatetime($payment->created_at, 'php:Y-m-d H:i') ?></td>
-                                <td><?= Yii::$app->formatter->asDecimal($payment->amount, 2) ?></td>
+                                <td><?= Yii::$app->formatter->asDecimal($payment->amount) ?></td>
                                 <td><?= ucfirst($payment->method) ?></td>
-                                <td><?= Yii::$app->formatter->asDecimal($runningTotal, 2) ?></td>
+                                <td><?= Yii::$app->formatter->asDecimal($runningTotal) ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -152,6 +152,16 @@ $this->params['breadcrumbs'][] = $this->title;
             <?= Html::button('Record Payment', ['class' => 'btn btn-success', 'data-toggle' => 'modal', 'data-target' => '#paymentModal']) ?>
         <?php endif; ?>
         <?= Html::a('Back to Purchases', ['index'], ['class' => 'btn btn-secondary']) ?>
+        <?php
+        $deleteLabel = 'Purchase #' . $model->id . ' — '
+            . ($model->supplier ? $model->supplier->name : 'Unknown Supplier')
+            . ' — ' . Yii::$app->formatter->asDecimal($model->total_amount);
+        ?>
+        <button type="button" class="btn btn-danger ml-2"
+                data-delete-url="<?= \yii\helpers\Url::to(['delete', 'id' => $model->id]) ?>"
+                data-delete-label="<?= Html::encode($deleteLabel) ?>">
+            <i class="fas fa-trash mr-1"></i>Delete Purchase
+        </button>
     </div>
 
 </div>
@@ -173,7 +183,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <label for="amount">Amount</label>
                         <input type="number" id="amount" class="form-control" min="0.01" step="0.01" 
                                value="<?= number_format($remainingBalance, 2, '.', '') ?>" required>
-                        <small class="form-text text-muted">Max: <?= Yii::$app->formatter->asDecimal($remainingBalance, 2) ?></small>
+                        <small class="form-text text-muted">Max: <?= Yii::$app->formatter->asDecimal($remainingBalance) ?></small>
                     </div>
                     <div class="form-group">
                         <label for="method">Payment Method</label>
