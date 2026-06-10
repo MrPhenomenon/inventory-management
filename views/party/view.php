@@ -18,6 +18,31 @@ $this->title = $model->name;
 $this->params['breadcrumbs'][] = ['label' => 'Parties', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
+
+<style>
+@media print {
+    body * { visibility: hidden; }
+    #ledger-print-area,
+    #ledger-print-area * { visibility: visible; }
+    #ledger-print-area {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    #ledger-print-area .card { border: none; box-shadow: none; }
+    #ledger-print-area .card-header { border-bottom: 2px solid #333; padding: 0 0 8px 0; margin-bottom: 12px; }
+    #ledger-print-area .no-print { display: none !important; }
+
+    #ledger-print-area table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+    #ledger-print-area th,
+    #ledger-print-area td { border: 1px solid #ccc; padding: 5px 8px; }
+    #ledger-print-area thead th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
+    #ledger-print-area .badge { border: 1px solid #333; background: none !important; color: #000 !important; padding: 1px 4px; font-size: 9pt; }
+}
+</style>
+
 <div class="parties-view">
 
     <div class="row">
@@ -131,9 +156,25 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 
-    <!-- Complete Ledger Section -->
-    <div class="card mb-3">
-        <div class="card-header"><h5 class="mb-0">Complete Ledger</h5></div>
+    <div class="card mb-3" id="ledger-print-area">
+        <div style="display:none;" class="print-only-header">
+            <h4 style="margin:0 0 4px 0;"><?= Html::encode($model->name) ?> — Ledger</h4>
+            <p style="margin:0 0 4px 0; font-size:10pt; color:#555;">
+                <?= Html::encode($model->phone ?: '') ?>
+                <?= $model->address ? ' · ' . Html::encode($model->address) : '' ?>
+            </p>
+            <p style="margin:0; font-size:9pt; color:#888;">Printed: <span id="printDate"></span></p>
+        </div>
+        <style>@media print { .print-only-header { display: block !important; } }</style>
+
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Complete Ledger</h5>
+            <?= \yii\helpers\Html::a(
+                '<i class="fas fa-file-pdf mr-1"></i>Save as PDF',
+                ['ledger-pdf', 'id' => $model->id],
+                ['class' => 'btn btn-sm btn-primary no-print', 'target' => '_blank']
+            ) ?>
+        </div>
         <div class="card-body" style="overflow-x: auto;">
             <?php if (count($transactions) > 0): ?>
             <table class="table table-striped table-hover table-sm">
@@ -145,7 +186,6 @@ $this->params['breadcrumbs'][] = $this->title;
                         <th style="text-align: right;">Debit</th>
                         <th style="text-align: right;">Credit</th>
                         <th style="text-align: right;">Balance</th>
-                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -185,18 +225,6 @@ $this->params['breadcrumbs'][] = $this->title;
                         <td style="text-align: right; font-weight: bold;">
                             <?= Yii::$app->formatter->asDecimal($runningBalance) ?>
                         </td>
-                        <td>
-                            <?php
-                            $statusBadgeClass = match($transaction['status']) {
-                                'paid' => 'badge-success',
-                                'partial' => 'badge-warning',
-                                'pending' => 'badge-info',
-                                'opening' => 'badge-dark',
-                                default => 'badge-secondary',
-                            };
-                            ?>
-                            <span class="badge <?= $statusBadgeClass ?>"><?= ucfirst(Html::encode($transaction['status'])) ?></span>
-                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -228,6 +256,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <?php endif; ?>
         </div>
     </div>
+
 
     <div class="form-group">
         <?= Html::a('Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
