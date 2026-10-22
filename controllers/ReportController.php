@@ -130,10 +130,13 @@ class ReportController extends AppController
             $totalAccounts += $bal;
         }
 
-        // --- Receivables: customer-only parties ---
-        $customers = Parties::find()->where(['type' => Parties::TYPE_CUSTOMER])->all();
         $receivableRows = [];
         $totalReceivables = 0;
+        $payableRows = [];
+        $totalPayables = 0;
+
+        // --- Receivables: customer-only parties ---
+        $customers = Parties::find()->where(['type' => Parties::TYPE_CUSTOMER])->all();
         foreach ($customers as $c) {
             $totalSales = (float)(Sales::find()->where(['customer_id' => $c->id])->sum('total_amount') ?? 0);
             $totalPaid  = (float)(Payments::find()->where(['party_id' => $c->id, 'type' => Payments::TYPE_INCOMING])->sum('amount') ?? 0);
@@ -142,13 +145,14 @@ class ReportController extends AppController
             if ($bal > 0) {
                 $receivableRows[] = ['name' => $c->name, 'balance' => $bal];
                 $totalReceivables += $bal;
+            // } elseif ($bal < 0) {
+            //     $payableRows[] = ['name' => $c->name, 'balance' => abs($bal)];
+            //     $totalPayables += abs($bal);
             }
         }
 
         // --- Payables: supplier-only parties ---
         $suppliers = Parties::find()->where(['type' => Parties::TYPE_SUPPLIER])->all();
-        $payableRows = [];
-        $totalPayables = 0;
         foreach ($suppliers as $s) {
             $totalPurchases = (float)(Purchases::find()->where(['supplier_id' => $s->id])->sum('total_amount') ?? 0);
             $totalPaid      = (float)(Payments::find()->where(['party_id' => $s->id, 'type' => Payments::TYPE_OUTGOING])->sum('amount') ?? 0);
@@ -157,6 +161,9 @@ class ReportController extends AppController
             if ($bal > 0) {
                 $payableRows[] = ['name' => $s->name, 'balance' => $bal];
                 $totalPayables += $bal;
+            } elseif ($bal < 0) {
+                $receivableRows[] = ['name' => $s->name, 'balance' => abs($bal)];
+                $totalReceivables += abs($bal);
             }
         }
 

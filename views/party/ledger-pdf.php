@@ -1,5 +1,6 @@
 <?php
 /** @var app\models\Parties $model */
+/** @var string $companyName */
 /** @var float $totalSales */
 /** @var float $totalPurchases */
 /** @var float $totalIncomingPayments */
@@ -12,18 +13,37 @@
 
 $fmt = Yii::$app->formatter;
 
+$companyName = isset($companyName) ? trim((string)$companyName) : '';
+$headerName  = $companyName !== '' ? $companyName : $model->name;
+
+$partyLabel = $model->isTypeBoth()
+    ? 'Customer / Supplier'
+    : ($model->isTypeSupplier() ? 'Supplier' : 'Customer');
+
 $footerDebit  = $totalSales + $totalOutgoingPayments
     + ($openingBalanceType === 'receivable' ? $openingBalance : 0);
 $footerCredit = $totalPurchases + $totalIncomingPayments
     + ($openingBalanceType === 'payable' ? $openingBalance : 0);
 $footerNet    = $footerDebit - $footerCredit;
 ?>
-<h2><?= htmlspecialchars($model->name) ?></h2>
-<div class="meta">
-    <?php if ($model->phone): ?>Phone: <?= htmlspecialchars($model->phone) ?> &nbsp;|&nbsp; <?php endif; ?>
-    <?php if ($model->address): ?>Address: <?= htmlspecialchars($model->address) ?> &nbsp;|&nbsp; <?php endif; ?>
-    Type: <?= htmlspecialchars($model->displayType()) ?>
+<div class="pdf-header">
+    <div class="company-name"><?= htmlspecialchars($headerName) ?></div>
+    <div class="doc-title">Ledger Statement</div>
 </div>
+
+<table class="party-info">
+    <tr>
+        <td><strong><?= htmlspecialchars($partyLabel) ?>:</strong> <?= htmlspecialchars($model->name) ?></td>
+        <td class="text-right"><strong>Statement Date:</strong> <?= date('d M Y') ?></td>
+    </tr>
+    <tr>
+        <td>
+            <?php if ($model->phone): ?>Phone: <?= htmlspecialchars($model->phone) ?><?php endif; ?>
+            <?php if ($model->address): ?><?= $model->phone ? ' &nbsp;|&nbsp; ' : '' ?>Address: <?= htmlspecialchars($model->address) ?><?php endif; ?>
+        </td>
+        <td class="text-right">Type: <?= htmlspecialchars($model->displayType()) ?></td>
+    </tr>
+</table>
 
 <table>
     <thead>

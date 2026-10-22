@@ -4,7 +4,7 @@ return [
     'class' => 'yii\db\Connection',
     'dsn' => 'mysql:host=localhost;dbname=inventory_system;port=3307',
     'username' => 'root',
-    'password' => '',
+    'password' => 'n',
     'charset' => 'utf8',
 
     // Schema cache options (for production environment)

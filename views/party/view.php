@@ -116,17 +116,17 @@ $this->params['breadcrumbs'][] = $this->title;
                         </tr>
                         <?php if ($model->isTypeCustomer() || $model->isTypeBoth()): ?>
                         <tr>
-                            <th>Customer Balance (Owed by them):</th>
-                            <td style="text-align: right; font-weight: bold; color: <?= $customerBalance > 0 ? 'red' : 'green' ?>;">
-                                <?= Yii::$app->formatter->asDecimal($customerBalance) ?>
+                            <th>Customer Balance <span style="font-weight:normal;font-size:0.85em;">(<?= $customerBalance > 0 ? 'Owed by them' : ($customerBalance < 0 ? 'Owed to them' : 'Settled') ?>)</span>:</th>
+                            <td style="text-align: right; font-weight: bold; color: <?= $customerBalance > 0 ? 'green' : ($customerBalance < 0 ? 'red' : 'gray') ?>;">
+                                <?= Yii::$app->formatter->asDecimal(abs($customerBalance)) ?>
                             </td>
                         </tr>
                         <?php endif; ?>
                         <?php if ($model->isTypeSupplier() || $model->isTypeBoth()): ?>
                         <tr>
-                            <th>Supplier Balance (Owed to them):</th>
-                            <td style="text-align: right; font-weight: bold; color: <?= $supplierBalance > 0 ? 'red' : 'green' ?>;">
-                                <?= Yii::$app->formatter->asDecimal($supplierBalance) ?>
+                            <th>Supplier Balance <span style="font-weight:normal;font-size:0.85em;">(<?= $supplierBalance > 0 ? 'Owed to them' : ($supplierBalance < 0 ? 'Owed by them' : 'Settled') ?>)</span>:</th>
+                            <td style="text-align: right; font-weight: bold; color: <?= $supplierBalance > 0 ? 'red' : ($supplierBalance < 0 ? 'green' : 'gray') ?>;">
+                                <?= Yii::$app->formatter->asDecimal(abs($supplierBalance)) ?>
                             </td>
                         </tr>
                         <?php endif; ?>
@@ -169,11 +169,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Complete Ledger</h5>
-            <?= \yii\helpers\Html::a(
-                '<i class="fas fa-file-pdf mr-1"></i>Save as PDF',
-                ['ledger-pdf', 'id' => $model->id],
-                ['class' => 'btn btn-sm btn-primary no-print', 'target' => '_blank']
-            ) ?>
+            <button type="button" class="btn btn-sm btn-primary no-print" id="btnSavePdf">
+                <i class="fas fa-file-pdf mr-1"></i>Save as PDF
+            </button>
         </div>
         <div class="card-body" style="overflow-x: auto;">
             <?php if (count($transactions) > 0): ?>
@@ -267,4 +265,60 @@ $this->params['breadcrumbs'][] = $this->title;
         <?= Html::a('Back to Parties', ['index'], ['class' => 'btn btn-secondary']) ?>
     </div>
 
+    <div class="modal fade no-print" id="pdfCompanyModal" tabindex="-1" role="dialog" aria-labelledby="pdfCompanyModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pdfCompanyModalLabel">Company Name for Ledger PDF</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <label for="pdfCompanyName">Company name to show on the ledger header</label>
+                    <input type="text" class="form-control" id="pdfCompanyName" placeholder="e.g. <?= Html::encode($model->name) ?>" autocomplete="off">
+                    <div class="invalid-feedback">Please enter a company name.</div>
+                    <small class="form-text text-muted">This appears as the heading of the exported PDF.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="pdfCompanyConfirm"><i class="fas fa-file-pdf mr-1"></i>Download PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<?php
+$pdfBaseUrl = \yii\helpers\Url::to(['ledger-pdf', 'id' => $model->id]);
+$storeKey = 'ledgerCompany_' . $model->id;
+$this->registerJs(<<<JS
+(function () {
+    var baseUrl = '{$pdfBaseUrl}';
+    var storeKey = '{$storeKey}';
+    var \$modal = $('#pdfCompanyModal');
+    var \$input = $('#pdfCompanyName');
+
+    $('#btnSavePdf').on('click', function () {
+        var saved = '';
+        try { saved = localStorage.getItem(storeKey) || ''; } catch (e) {}
+        \$input.val(saved).removeClass('is-invalid');
+        \$modal.modal('show');
+    });
+
+    \$modal.on('shown.bs.modal', function () { \$input.trigger('focus'); });
+
+    function download() {
+        var name = \$input.val().trim();
+        if (name === '') { \$input.addClass('is-invalid').trigger('focus'); return; }
+        try { localStorage.setItem(storeKey, name); } catch (e) {}
+        var url = baseUrl + (baseUrl.indexOf('?') === -1 ? '?' : '&') + 'company=' + encodeURIComponent(name);
+        window.open(url, '_blank');
+        \$modal.modal('hide');
+    }
+
+    $('#pdfCompanyConfirm').on('click', download);
+    \$input.on('input', function () { \$input.removeClass('is-invalid'); });
+    \$input.on('keypress', function (e) { if (e.which === 13) { download(); } });
+})();
+JS);
+?>

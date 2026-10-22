@@ -70,11 +70,13 @@ class PartyController extends Controller
         return $this->render('view', array_merge(['model' => $model], $data));
     }
 
-    public function actionLedgerPdf($id)
+    public function actionLedgerPdf($id, $company = null)
     {
-        $model   = $this->findModel($id);
-        $data    = $this->buildLedgerData($model);
-        $content = $this->renderPartial('ledger-pdf', array_merge(['model' => $model], $data));
+        $model       = $this->findModel($id);
+        $data        = $this->buildLedgerData($model);
+        $companyName  = trim((string)$company);
+        $headerName   = $companyName !== '' ? $companyName : $model->name;
+        $content     = $this->renderPartial('ledger-pdf', array_merge(['model' => $model, 'companyName' => $companyName], $data));
 
         $filename = preg_replace('/[^A-Za-z0-9 _-]/', '', $model->name) . '-Ledger.pdf';
 
@@ -87,13 +89,16 @@ class PartyController extends Controller
             'content'     => $content,
             'options'     => ['title' => $model->name . ' Ledger'],
             'methods'     => [
-                'SetHeader' => [$model->name . ' — Ledger||Generated: ' . date('d M Y')],
+                'SetHeader' => [$headerName . ' — Ledger||Generated: ' . date('d M Y')],
                 'SetFooter' => ['||Page {PAGENO} of {nb}'],
             ],
             'cssInline' => '
                 body { font-family: Arial, sans-serif; font-size: 10pt; color: #222; }
-                h2 { font-size: 13pt; margin: 0 0 4px 0; }
-                .meta { font-size: 9pt; color: #555; margin-bottom: 12px; }
+                .pdf-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 12px; }
+                .pdf-header .company-name { font-size: 18pt; font-weight: bold; color: #111; }
+                .pdf-header .doc-title { font-size: 10pt; color: #555; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+                .party-info { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 14px; }
+                .party-info td { border: none; padding: 2px 0; vertical-align: top; }
                 table { width: 100%; border-collapse: collapse; font-size: 9pt; }
                 th { background-color: #f0f0f0; border: 1px solid #ccc; padding: 5px 7px; text-align: left; }
                 td { border: 1px solid #ccc; padding: 5px 7px; }

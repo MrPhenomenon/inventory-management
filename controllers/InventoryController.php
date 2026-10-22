@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\components\FifoValuation;
 use app\models\InventoryTransactions;
 use app\models\Products;
 use app\models\ProductUnits;
@@ -28,9 +29,11 @@ class InventoryController extends AppController
     public function actionIndex()
     {
         $products = Products::find()->all();
+        $valuations = FifoValuation::compute();
         $stockData = [];
 
         foreach ($products as $product) {
+            $valuation = $valuations[$product->id] ?? FifoValuation::NONE;
             $baseStock = $this->calculateBaseStock($product->id);
             $baseUnit = $product->baseUnit;
 
@@ -51,6 +54,9 @@ class InventoryController extends AppController
                 'base_stock'     => $baseStock,
                 'base_unit'      => $baseUnit ? $baseUnit->name : 'N/A',
                 'unit_breakdown' => $unitBreakdown,
+                'stock_value'    => $valuation['value'],
+                'uncosted_qty'   => $valuation['uncosted_qty'],
+                'lots'           => $valuation['lots'],
                 'product'        => $product,
             ];
         }
@@ -59,12 +65,13 @@ class InventoryController extends AppController
             'allModels' => $stockData,
             'pagination' => ['pageSize' => 20],
             'sort' => [
-                'attributes' => ['name', 'category', 'base_stock'],
+                'attributes' => ['name', 'category', 'base_stock', 'stock_value'],
             ],
         ]);
 
         return $this->render('index', [
             'dataProvider' => $dataProvider,
+            'totalStockValue' => array_sum(array_column($stockData, 'stock_value')),
         ]);
     }
 

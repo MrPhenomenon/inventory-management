@@ -11,7 +11,12 @@ $config = [
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm' => '@vendor/npm-asset',
-    ],           
+    ],
+    'container' => [
+        'definitions' => [
+            'yii\widgets\LinkPager' => ['class' => 'yii\bootstrap5\LinkPager'],
+        ],
+    ],
     'components' => [
         'formatter' => [
             'class' => 'yii\i18n\Formatter',

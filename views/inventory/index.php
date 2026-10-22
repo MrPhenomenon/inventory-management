@@ -6,6 +6,7 @@ use yii\widgets\Pjax;
 
 /** @var yii\web\View $this */
 /** @var yii\data\ArrayDataProvider $dataProvider */
+/** @var float $totalStockValue */
 
 $this->title = 'Stock Levels';
 $this->params['breadcrumbs'][] = $this->title;
@@ -21,6 +22,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
+        'showFooter' => true,
         'columns' => [
         [
                 'attribute' => 'name',
@@ -68,6 +70,40 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'attribute' => 'base_unit',
                 'label' => 'Base Unit',
+                'footer' => '<strong>Total Stock Value</strong>',
+                'footerOptions' => ['style' => 'text-align: right;'],
+            ],
+            [
+                'label' => 'Qty @ Cost',
+                'format' => 'html',
+                'value' => function ($data) {
+                    if (empty($data['lots'])) {
+                        return '<span class="text-muted" style="font-size:0.8em;">—</span>';
+                    }
+                    $lines = [];
+                    foreach ($data['lots'] as $lot) {
+                        $lines[] = $lot['cost'] === null
+                            ? '<span class="text-warning">' . number_format($lot['qty']) . ' @ no cost</span>'
+                            : number_format($lot['qty']) . ' @ ' . number_format($lot['cost'], 2);
+                    }
+                    return '<div style="font-size:0.8em; line-height:1.7; white-space:nowrap;">' . implode('<br>', $lines) . '</div>';
+                },
+            ],
+            [
+                'attribute' => 'stock_value',
+                'label' => 'Stock Value',
+                'format' => 'html',
+                'value' => function ($data) {
+                    $html = '<strong>' . number_format($data['stock_value']) . '</strong>';
+                    if ($data['uncosted_qty'] > 0) {
+                        $html .= '<div class="text-warning" style="font-size:0.75em;"><i class="fas fa-exclamation-triangle"></i> '
+                            . number_format($data['uncosted_qty']) . ' without cost</div>';
+                    }
+                    return $html;
+                },
+                'contentOptions' => ['style' => 'text-align: right;'],
+                'footer' => '<strong>' . number_format($totalStockValue) . '</strong>',
+                'footerOptions' => ['style' => 'text-align: right;'],
             ],
             [
                 'class' => 'yii\grid\ActionColumn',
